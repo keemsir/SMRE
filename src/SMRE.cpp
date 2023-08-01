@@ -1,126 +1,59 @@
 
-/*
-A library of Stepper motors and Rotary encoders
-*/
+// SMRE.cpp
+//
+//
+// Copyright (C) 2023 Maengee Kim
+// $Id: SMRE.cpp,v 1.0 2023/07/01 keemsir Exp $
+//
+//
+// A library of Stepper motors and Rotary encoders
 
 
-#include "Arduino.h"
 #include "SMRE.h"
 
+// Parameter setting
 
-SMRE::SMRE(uint8_t pins, uint8_t motor_pin_1, uint8_t motor_pin_2)
+void SMRE::moveTo(long absolute)
 {
-    _pins = pins;
-
-    _steps_left = 0; // +, Initialize step
-    _encoder_targetPos = 0; // Destination
-
-    _currentPos = 0;
-    _targetPos = 0;
-    _totalPos = 0;
-    
-    // _limit_Pos = 500;
-    
-    _step_number = 0;
-    _stepTime = 0;
-    _speed = 0;
-    _direction = 0;
-    _last_step_time = 0;
-
-    _stepInterval = 0;
-    _lastStepTime = 0;
-
-    _motor_pin_1 = motor_pin_1;
-    _motor_pin_2 = motor_pin_2;
-
-    // setup the pins
-    pinMode(_motor_pin_1, OUTPUT);
-    pinMode(_motor_pin_2, OUTPUT);
-
-    // When there are only 2 pins, set the other two to 0:
-    _motor_pin_3 = 0;
-    _motor_pin_4 = 0;
+    _targetPos = absolute;
+    computeNewSpeed();
 }
 
 
-
-SMRE::SMRE(uint8_t pins, uint8_t motor_pin_1, uint8_t motor_pin_2, uint8_t motor_pin_3, uint8_t motor_pin_4)
+void SMRE::cycleTime(long absoluteTime)
 {
-    _pins = pins;
-
-    _steps_left = 0; // +, Initialize step
-    _encoder_targetPos = 0; // Destination
-
-    _currentPos = 0;
-    _targetPos = 0;
-    _totalPos = 0;
-
-    // _limit_Pos = 500;
-
-    _step_number = 0;
-    _stepTime = 0;
-    _speed = 0;
-    _direction = 0;
-    _last_step_time = 0;
-
-    _stepInterval = 0;
-    _lastStepTime = 0;
-
-    _motor_pin_1 = motor_pin_1;
-    _motor_pin_2 = motor_pin_2;
-    _motor_pin_3 = motor_pin_3;
-    _motor_pin_4 = motor_pin_4;
-
-    // setup the pins
-    pinMode(_motor_pin_1, OUTPUT);
-    pinMode(_motor_pin_2, OUTPUT);
-    pinMode(_motor_pin_3, OUTPUT);
-    pinMode(_motor_pin_4, OUTPUT);
+    _targetTime = absoluteTime;
+    computeNewSpeed();
 }
 
 
-
-SMRE::SMRE_Encoder(uint8_t encoder_pin_1, uint8_t encoder_pin_2)
+// Relative position
+void SMRE::move(long relative)
 {
-    _encoder_pin_1 = encoder_pin_1;
-    _encoder_pin_2 = encoder_pin_2;
-
-    // Setup the input pins and turn on pullup resistor
-    pinMode(encoder_pin_1, INPUT_PULLUP);
-    pinMode(encoder_pin_2, INPUT_PULLUP);
-
-    int sig1 = digitalRead(_encoder_pin_1);
-    int sig2 = digitalRead(_encoder_pin_2);
-    _oldState = sig1 | (sig2 << 1);
-
-    // Start with position 0
-    _encoderPostion = 0;
-    _encoderPostionExt = 0;
-    _encoderPostionExtPrev = 0;
-
-    //
-    //
-    //
-    //
+    moveTo(_currentPos + relative);
 }
 
 
-
+// Implements steps according to the current speed
+// You must call this at least once per step
+// returns true if a step occurred
 boolean SMRE::runSpeed()
 {
-    usigned long time = millis();
-
-    if (time > _lastStepTime + _stepDelay)
+    unsigned long time = millis();
+  
+    if (time > _lastStepTime + _stepInterval)
     {
         if (_speed > 0)
         {
+            // Clockwise
             _currentPos += 1;
         }
         else if (_speed < 0)
         {
+            // Anticlockwise  
             _currentPos -= 1;
         }
-        stepMotor(_currentPos & 0x3);
+        step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers) 
 
         _lastStepTime = time;
         return true;
@@ -130,295 +63,375 @@ boolean SMRE::runSpeed()
 }
 
 
-
 long SMRE::distanceToGo()
 {
     return _targetPos - _currentPos;
 }
 
 
+long SMRE::timeToGo()
+{
+    return _targetTime;
+}
+
+
+long SMRE::targetPosition()
+{
+    return _targetPos;
+}
+
+
+long SMRE::currentPosition()
+{
+    return _currentPos;
+}
+
+
+// Useful during initialisations or after initial positioning
+void SMRE::setCurrentPosition(long position)
+{
+    _currentPos = position;
+}
+
 
 void SMRE::computeNewSpeed()
 {
-    setSpeed(deterSpeed());
+    // setSpeed(desiredSpeed());
+    setSpeed(timeSpeed());
 }
 
 
-
-void SMRE::calculateSpeed()
-{
-    
-}
-
-
-
-/*
- * This is called:
- * after each step
- * after user changes:
- * target position
- * Speed: Step interval delay
- */
-float SMRE::deterSpeed()
+// Work out and return a new speed.
+// Subclasses can override if they want
+// Implement acceleration, deceleration and max speed
+// Negative speed is anticlockwise
+// This is called:
+//  after each step
+//  after user changes:
+//      maxSpeed
+//      acceleration
+//      target position (relative or absolute)
+float SMRE::desiredSpeed()
 {
     long distanceTo = distanceToGo();
 
+    // Max possible speed that can still decelerate in the available distance
     float requiredSpeed;
 
     if (distanceTo == 0)
-        retrun 0.0;
-    else if (distanceTo > 0)
-        requiredSpeed = abs(_stepTime / _totalPos)
-    else
-        requiredSpeed = abs(_stepTime / _totalPos)
+        return 0.0; // Were there
+    else if (distanceTo > 0) // Clockwise
+        requiredSpeed = sqrt(2.0 * distanceTo * _acceleration);
+    else  // Anticlockwise
+        requiredSpeed = -sqrt(2.0 * -distanceTo * _acceleration);
 
-    // Serial.println(requiredSpeed);
+    if (requiredSpeed > _speed)
+    {
+        // Need to accelerate in clockwise direction
+        if (_speed == 0)
+            requiredSpeed = sqrt(2.0 * _acceleration);
+        else
+            requiredSpeed = _speed + abs(_acceleration / _speed);
+        if (requiredSpeed > _maxSpeed)
+            requiredSpeed = _maxSpeed;
+    }
+    else if (requiredSpeed < _speed)
+    {
+        // Need to accelerate in anticlockwise direction
+        if (_speed == 0)
+            requiredSpeed = -sqrt(2.0 * _acceleration);
+        else
+            requiredSpeed = _speed - abs(_acceleration / _speed);
+        if (requiredSpeed < -_maxSpeed)
+            requiredSpeed = -_maxSpeed;
+    }
     return requiredSpeed;
 }
 
 
+// This is called:
+//  after user changes:
+//      _targetPos (moveTo) 
+//      _targetTime (cycleTime)
+float SMRE::timeSpeed()
+{
+    long distanceTo = distanceToGo();
+    long time = timeToGo();
 
+    float requiredSpeed;
+
+    if (distanceTo == 0)
+        return 0.0;
+    else if (distanceTo > 0)
+        requiredSpeed = abs(distanceTo / time);
+    else
+        requiredSpeed = -abs(distanceTo / time);
+
+    Serial.print("Distance: ");
+    Serial.println(distanceTo);
+
+    Serial.print("Time: ");
+    Serial.println(time);
+
+    return requiredSpeed;
+}
+
+
+// Run the motor to implement speed and acceleration in order to proceed to the target position
+// You must call this at least once per step, preferably in your main loop
+// If the motor is in the desired position, the cost is very small
+// returns true if we are still running to position
 boolean SMRE::run()
 {
     if (_targetPos == _currentPos)
         return false;
-    
+
     if (runSpeed())
-        return true;
-    //     deterSpeed();
-        
+        // computeNewSpeed();
     return true;
 }
 
 
-// unit: ms
-void SMRE::timeToGo(long time)
+SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
 {
-    _stepTime = time;
+    _pins = pins;
+    _currentPos = 0;
+    _targetPos = 0;
+    _targetTime = 1.0;
+    _speed = 0.0;
+    _maxSpeed = 1.0;
+    _acceleration = 1.0;
+    _stepInterval = 0;
+    _lastStepTime = 0;
+    _pin1 = pin1;
+    _pin2 = pin2;
+    _pin3 = pin3;
+    _pin4 = pin4;
+    enableOutputs();
+}
+
+
+SMRE::SMRE(void (*forward)(), void (*backward)())
+{
+    _pins = 0;
+    _currentPos = 0;
+    _targetPos = 0;
+    _targetTime = 1.0;
+    _speed = 0.0;
+    _maxSpeed = 1.0;
+    _acceleration = 1.0;
+    _stepInterval = 0;
+    _lastStepTime = 0;
+    _pin1 = 0;
+    _pin2 = 0;
+    _pin3 = 0;
+    _pin4 = 0;
+    _forward = forward;
+    _backward = backward;
+}
+
+
+void SMRE::setMaxSpeed(float speed)
+{
+    _maxSpeed = speed;
     computeNewSpeed();
 }
 
 
-void SMRE::moveTo(long absolute)
+void SMRE::setAcceleration(float acceleration)
 {
-    _targetPos = absolute;
+    _acceleration = acceleration;
     computeNewSpeed();
 }
 
 
-
-// Sets the speed in revs per minute (micros)
-void SMRE::setSpeed(long stepTime)
+void SMRE::setSpeed(float speed)
 {
-    _stepTime = stepTime;
-    // _stepDelay = 60L * 1000L * 1000L / _pins / whatSpeed; // 60,000,000
-    _stepDelay = abs(1000.0 / _stepTime);
-
-    // Sets the delay
-    // _stepDelay = whatSpeed
+    _speed = speed;
+    // if (_speed != 0)
+    _stepInterval = abs(1000.0 / _speed);
+    // else
+    //     _stepInterval = 0.0;
 }
 
 
-
-/*
-// Moves the motor steps_to_move steps
-void SMRE::step(int steps_to_move)
+float SMRE::speed()
 {
-    int steps_left = abs(steps_to_move);
+    return _speed;
+}
 
-    // direction
-    if (steps_to_move > 0) {_direction = 1;}
-    if (steps_to_move > 0) {_direction = 0;}
 
-    // decrement the number of steps, moving one step each time:
-    while (steps_left > 0)
+// Subclasses can override
+void SMRE::step(uint8_t step)
+{
+    switch (_pins)
     {
-        unsigned long now = micros();
-        // move only if the appropriate delay has passed:
-        if (now - _last_step_time >= _stepDelay)
-        {
-            // get the timeStamp of when you stepped:
-            _last_step_time = now;
-            // increment or decrement the step number,
-
-            if (_direction == 1)
-            {
-                _step_number++;
-                if (_step_number == _pins)
-                {
-                    _step_number = 0;
-                }
-            }
-            else
-            {
-                if (_step_number == 0)
-                {
-                    _step_number = _pins;
-                }
-                _step_number--;
-            }
-            // decrement the steps left:
-            steps_left--;
-            // step the motor to step number 0, 1, ..., {3 or 10}
-        }
+        case 0:
+            step0();
+            break;
+        case 1:
+            step1(step);
+            break;
+        
+        case 2:
+            step2(step);
+            break;
+        
+        case 4:
+            step4(step);
+            break;  
     }
 }
-*/
 
 
-
-// Operation the Stepper-motor ()
-void SMRE::operStep(int operSpeed)
+// 0 pin step function (ie for functional usage)
+void SMRE::step0()
 {
-    _speed = abs(operSpeed);
-    setSpeed(_speed);
-
-    // determine direction based on whether steps_to_mode is + or -:
-    if (operSpeed > 0) {_direction = 1;}
-    if (operSpeed < 0) {_direction = 0;}
-
-    moveStep();
-}
-
-
-
-// (_currentPos != _targetPos)
-void SMRE::moveStep2()
-{
-    // decrement the number of steps, moving one step each time:
     if (_speed > 0)
     {
-        _steps_left = targetPos;
-
-        if (_steps_left != 0)
-        {
-            if (_direction == 1)
-            {
-                _step_number++;
-                if (_step_number == _pins)
-                {
-                    _step_number = 0;
-                }
-            }
-            else
-            {
-                if (_step_number == 0)
-                {
-                    _step_number = _pins;
-                }
-                _step_number--;
-            }
-            // decrement the steps left:
-            steps_left--;
-            // step the motor to step number 0, 1, ..., {3 or 10}
-            stepMotor(_step_number % 4);
-        }
+        _forward();
     }
-}
-
-
-
-// Moving the Stepper-motor
-void SMRE::moveStep()
-{
-
-    // decrement the number of steps, moving one step each time:
-    if (_speed > 0)
+    else
     {
-        unsigned long now = micros();
-        // move only if the appropriate delay has passed:
-        if (now - _last_step_time >= _stepDelay)
+        _backward();
+    }
+}
+
+
+// 1 pin step function (ie for stepper drivers)
+// This is passed the current step number (0 to 3)
+// Subclasses can override
+void SMRE::step1(uint8_t step)
+{
+    digitalWrite(_pin2, _speed > 0); // Direction
+    // Caution 200ns setup time 
+    digitalWrite(_pin1, HIGH);
+    // Caution, min Step pulse width for 3967 is 1microsec
+    // Delay 1microsec
+    delayMicroseconds(1);
+    digitalWrite(_pin1, LOW);
+}
+
+
+// 2 pin step function
+// This is passed the current step number (0 to 3)
+// Subclasses can override
+void SMRE::step2(uint8_t step)
+{
+    switch (step)
+    {
+        case 0: /* 01 */
+            digitalWrite(_pin1, LOW);
+            digitalWrite(_pin2, HIGH);
+            break;
+
+        case 1: /* 11 */
+            digitalWrite(_pin1, HIGH);
+            digitalWrite(_pin2, HIGH);
+            break;
+
+        case 2: /* 10 */
+            digitalWrite(_pin1, HIGH);
+            digitalWrite(_pin2, LOW);
+            break;
+
+        case 3: /* 00 */
+            digitalWrite(_pin1, LOW);
+            digitalWrite(_pin2, LOW);
+            break;
+    }
+}
+
+
+// 4 pin step function
+// This is passed the current step number (0 to 3)
+// Subclasses can override
+void SMRE::step4(uint8_t step)
+{
+    switch (step)
+    {
+        case 0:    // 1010
+            digitalWrite(_pin1, HIGH);
+            digitalWrite(_pin2, LOW);
+            digitalWrite(_pin3, HIGH);
+            digitalWrite(_pin4, LOW);
+            break;
+
+        case 1:    // 0110
+            digitalWrite(_pin1, LOW);
+            digitalWrite(_pin2, HIGH);
+            digitalWrite(_pin3, HIGH);
+            digitalWrite(_pin4, LOW);
+            break;
+
+        case 2:    //0101
+            digitalWrite(_pin1, LOW);
+            digitalWrite(_pin2, HIGH);
+            digitalWrite(_pin3, LOW);
+            digitalWrite(_pin4, HIGH);
+            break;
+
+        case 3:    //1001
+            digitalWrite(_pin1, HIGH);
+            digitalWrite(_pin2, LOW);
+            digitalWrite(_pin3, LOW);
+            digitalWrite(_pin4, HIGH);
+            break;
+    }
+}
+
+
+// Prevents power consumption on the outputs
+void SMRE::disableOutputs()
+{
+    if (! _pins) return;
+
+        digitalWrite(_pin1, LOW);
+        digitalWrite(_pin2, LOW);
+        
+        if (_pins == 4)
         {
-            // get the timeStamp of when you stepped:
-            _last_step_time = now;
-            // increment or decrement the step number
-
-            if (_direction == 1)
-            {
-                _step_number++;
-                if (_step_number == _pins)
-                {
-                    _step_number = 0;
-                }
-            }
-            else
-            {
-                if (_step_number == 0)
-                {
-                    _step_number = _pins;
-                }
-                _step_number--;
-            }
-            // decrement the steps left:
-            steps_left--;
-            // step the motor to step number 0, 1, ..., {3 or 10}
-            stepMotor(_step_number % 4);
+            digitalWrite(_pin3, LOW);
+            digitalWrite(_pin4, LOW);
         }
-    }
 }
 
 
-
-// Moves the motor forward or backwards.
-void SMRE::stepMotor(uint8_t thisStep)
+void SMRE::enableOutputs()
 {
-    if (_pin_count == 2) {
-        switch (thisStep) {
-            case 0:  // 01
-                digitalWrite(motor_pin_1, LOW);
-                digitalWrite(motor_pin_2, HIGH);
-            break;
-            case 1:  // 11
-                digitalWrite(motor_pin_1, HIGH);
-                digitalWrite(motor_pin_2, HIGH);
-            break;
-            case 2:  // 10
-                digitalWrite(motor_pin_1, HIGH);
-                digitalWrite(motor_pin_2, LOW);
-            break;
-            case 3:  // 00
-                digitalWrite(motor_pin_1, LOW);
-                digitalWrite(motor_pin_2, LOW);
-            break;
-        }
-    }
+    if (! _pins) return;
 
-    if (_pin_count == 4) {
-        switch (thisStep) {
-            case 0:  // 1010
-                digitalWrite(motor_pin_1, HIGH);
-                digitalWrite(motor_pin_2, LOW);
-                digitalWrite(motor_pin_3, HIGH);
-                digitalWrite(motor_pin_4, LOW);
-            break;
-            case 1:  // 0110
-                digitalWrite(motor_pin_1, LOW);
-                digitalWrite(motor_pin_2, HIGH);
-                digitalWrite(motor_pin_3, HIGH);
-                digitalWrite(motor_pin_4, LOW);
-            break;
-            case 2:  //0101
-                digitalWrite(motor_pin_1, LOW);
-                digitalWrite(motor_pin_2, HIGH);
-                digitalWrite(motor_pin_3, LOW);
-                digitalWrite(motor_pin_4, HIGH);
-            break;
-            case 3:  //1001
-                digitalWrite(motor_pin_1, HIGH);
-                digitalWrite(motor_pin_2, LOW);
-                digitalWrite(motor_pin_3, LOW);
-                digitalWrite(motor_pin_4, HIGH);
-            break;
-        }
+    pinMode(_pin1, OUTPUT);
+    pinMode(_pin2, OUTPUT);
+    if (_pins == 4)
+    {
+        pinMode(_pin3, OUTPUT);
+        pinMode(_pin4, OUTPUT);
     }
 }
 
 
-
-// version() returns the version of the library:
-int SMRE::version(void)
+// Blocks until the target position is reached
+void SMRE::runToPosition()
 {
-    return 1;
+    while (run())
+        ;
 }
+
+
+boolean SMRE::runSpeedToPosition()
+{
+    return _targetPos!=_currentPos ? SMRE::runSpeed() : false;
+}
+
+
+// Blocks until the new target position is reached
+void SMRE::runToNewPosition(long position)
+{
+    moveTo(position);
+    runToPosition();
+}
+
+
 
 
