@@ -15,6 +15,11 @@ SMRE	KEYWORD1
 step	KEYWORD2
 setSpeed	KEYWORD2
 version	KEYWORD2
+initialConfig KEYWORD2
+
+distanceToGo KEYWORD2
+moveStep KEYWORD2
+operStep KEYWORD2
 
 ######################################
 # Instances (KEYWORD2)
