@@ -89,16 +89,22 @@ public:
     /// recent call to this function.
     /// \param[in] absolute The desired absolute position. Negative is
     /// anticlockwise from the 0 position.
-    void    moveTo(long absolute); 
+    void    moveTo(long absolute);
 
     /// Set the target spending time.
     /// \param[in] time
     void cycleTime(long time);
 
+    /// Set the target spending time.
+    /// \param[in] absoluteEncoder
+    void moveToEncoder(long absoluteEncoder);
+
     /// Set the target position relative to the current position
     /// \param[in] relative The desired position relative to the current position. Negative is
     /// anticlockwise from the current position.
     void move(long relative);
+
+    void EMERGENCY_Button();
 
     /// Poll the motor and step it if a step is due, implementing
     /// accelerations and decelerations to achive the ratget position. You must call this as
@@ -106,6 +112,8 @@ public:
     /// preferably in your main loop.
     /// \return true if the motor is at the target position.
     boolean run();
+
+    boolean runEncoder();
 
     /// Poll the motor and step it if a step is due, implmenting a constant
     /// speed as set by the most recent call to setSpeed().
@@ -148,6 +156,10 @@ public:
     /// \return the target position
     /// in steps. Positive is clockwise from the 0 position.
     long    targetPosition();
+
+
+    
+    long    targetPositionEncoder();
 
 
     /// The currently motor position.
@@ -264,6 +276,10 @@ private:
 
     long           _targetTime;    // cycles
 
+    long           _currentPosEncoder;  // Encoder
+
+    long           _targetPosEncoder;  // Encoder
+
     /// The current motos speed in steps per second
     /// Positive is clockwise
     float          _speed;         // Steps per second
@@ -280,6 +296,9 @@ private:
 
     /// The last step time in milliseconds
     unsigned long  _lastStepTime;
+
+    /// Emergency button
+    boolean        _EMERGENCY;
 
     // The pointer to a forward-step procedure
     void (*_forward)();
