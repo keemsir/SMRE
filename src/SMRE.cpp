@@ -11,7 +11,7 @@
 
 #include "SMRE.h"
 
-// Parameter setting
+//// Parameter setting ////
 
 void SMRE::moveTo(long absolute)
 {
@@ -27,11 +27,25 @@ void SMRE::cycleTime(long absoluteTime)
 }
 
 
+void SMRE::moveToEncoder(long absoluteEncoder)
+{
+    _targetPosEncoder = absoluteEncoder;
+}
+
+
 // Relative position
 void SMRE::move(long relative)
 {
     moveTo(_currentPos + relative);
 }
+
+
+// Emergency button
+void SMRE::EMERGENCY_Button()
+{
+    _EMERGENCY = true;
+}
+
 
 
 // Implements steps according to the current speed
@@ -47,11 +61,13 @@ boolean SMRE::runSpeed()
         {
             // Clockwise
             _currentPos += 1;
+            _currentPosEncoder += 1;
         }
         else if (_speed < 0)
         {
             // Anticlockwise  
             _currentPos -= 1;
+            _currentPosEncoder -= 1;
         }
         step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers) 
 
@@ -78,6 +94,12 @@ long SMRE::timeToGo()
 long SMRE::targetPosition()
 {
     return _targetPos;
+}
+
+
+long SMRE::targetPositionEncoder()
+{
+    return _targetPosEncoder;
 }
 
 
@@ -183,13 +205,34 @@ float SMRE::timeSpeed()
 // returns true if we are still running to position
 boolean SMRE::run()
 {
-    if (_targetPos == _currentPos)
-        return false;
+    if (_EMERGENCY == false)
+        if (_targetPos == _currentPos)
+            return false;
+        
+        // if (_targetPosEncoder == _currentPosEncoder)
+        //     return false;
 
-    if (runSpeed())
-        // computeNewSpeed();
-    return true;
+
+        if (runSpeed())
+            // computeNewSpeed();
+        return true;
+    return false;
 }
+
+
+
+boolean SMRE::runEncoder()
+{
+    if (_EMERGENCY == false)
+        if (_targetPosEncoder == _currentPosEncoder)
+            return false;
+
+        if (runSpeed())
+
+        return true;
+    return false;
+}
+
 
 
 SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
@@ -197,6 +240,8 @@ SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
     _pins = pins;
     _currentPos = 0;
     _targetPos = 0;
+    _currentPosEncoder = 0;
+    _targetPosEncoder = 0;
     _targetTime = 1.0;
     _speed = 0.0;
     _maxSpeed = 1.0;
@@ -207,6 +252,7 @@ SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
     _pin2 = pin2;
     _pin3 = pin3;
     _pin4 = pin4;
+    _EMERGENCY = false;
     enableOutputs();
 }
 
@@ -216,6 +262,8 @@ SMRE::SMRE(void (*forward)(), void (*backward)())
     _pins = 0;
     _currentPos = 0;
     _targetPos = 0;
+    _currentPosEncoder = 0;
+    _targetPosEncoder = 0;
     _targetTime = 1.0;
     _speed = 0.0;
     _maxSpeed = 1.0;
@@ -226,6 +274,7 @@ SMRE::SMRE(void (*forward)(), void (*backward)())
     _pin2 = 0;
     _pin3 = 0;
     _pin4 = 0;
+    _EMERGENCY = false;
     _forward = forward;
     _backward = backward;
 }
@@ -249,7 +298,7 @@ void SMRE::setSpeed(float speed)
 {
     _speed = speed;
     // if (_speed != 0)
-    _stepInterval = abs(1000.0 / _speed);
+    _stepInterval = abs(100.0 / _speed);
     // else
     //     _stepInterval = 0.0;
 }
@@ -433,5 +482,6 @@ void SMRE::runToNewPosition(long position)
 }
 
 
+// fake encoder position
 
 
