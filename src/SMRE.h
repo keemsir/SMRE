@@ -149,6 +149,9 @@ public:
     long    distanceToGo();
 
 
+    long    distanceToGoEncoder();
+
+
     ///  The time from the current position to the target position.
     long    timeToGo();
 
@@ -166,6 +169,8 @@ public:
     /// \return the current motor position
     /// in steps. Positive is clockwise from the 0 position.
     long    currentPosition();  
+
+    long    currentPositionEncoder();
 
     /// Resets the current position of the motor, so that wherever the mottor
     /// happens to be right now is considered to be the new position. Useful
