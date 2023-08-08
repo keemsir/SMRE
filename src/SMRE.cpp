@@ -30,6 +30,8 @@ void SMRE::cycleTime(long absoluteTime)
 void SMRE::moveToEncoder(long absoluteEncoder)
 {
     _targetPosEncoder = absoluteEncoder;
+    // _targetPos = absoluteEncoder;
+    computeNewSpeed();
 }
 
 
@@ -47,14 +49,13 @@ void SMRE::EMERGENCY_Button()
 }
 
 
-
 // Implements steps according to the current speed
 // You must call this at least once per step
 // returns true if a step occurred
 boolean SMRE::runSpeed()
 {
     unsigned long time = millis();
-  
+
     if (time > _lastStepTime + _stepInterval)
     {
         if (_speed > 0)
@@ -69,7 +70,8 @@ boolean SMRE::runSpeed()
             _currentPos -= 1;
             _currentPosEncoder -= 1;
         }
-        step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers) 
+        step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers)
+        step(_currentPosEncoder & 0x3);
 
         _lastStepTime = time;
         return true;
@@ -82,6 +84,12 @@ boolean SMRE::runSpeed()
 long SMRE::distanceToGo()
 {
     return _targetPos - _currentPos;
+}
+
+
+long SMRE::distanceToGoEncoder()
+{
+    return _targetPosEncoder - _currentPosEncoder;
 }
 
 
@@ -106,6 +114,12 @@ long SMRE::targetPositionEncoder()
 long SMRE::currentPosition()
 {
     return _currentPos;
+}
+
+
+long SMRE::currentPositionEncoder()
+{
+    return _currentPosEncoder;
 }
 
 
@@ -212,13 +226,11 @@ boolean SMRE::run()
         // if (_targetPosEncoder == _currentPosEncoder)
         //     return false;
 
-
         if (runSpeed())
             // computeNewSpeed();
         return true;
     return false;
 }
-
 
 
 boolean SMRE::runEncoder()
@@ -228,11 +240,10 @@ boolean SMRE::runEncoder()
             return false;
 
         if (runSpeed())
-
+            // computeNewSpeed();
         return true;
     return false;
 }
-
 
 
 SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
@@ -278,6 +289,7 @@ SMRE::SMRE(void (*forward)(), void (*backward)())
     _forward = forward;
     _backward = backward;
 }
+
 
 
 void SMRE::setMaxSpeed(float speed)
