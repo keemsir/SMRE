@@ -54,7 +54,7 @@ void SMRE::EMERGENCY_Button()
 // returns true if a step occurred
 boolean SMRE::runSpeed()
 {
-    unsigned long time = millis();
+    unsigned long time = micros(); // millis()
 
     if (time > _lastStepTime + _stepInterval)
     {
@@ -62,15 +62,44 @@ boolean SMRE::runSpeed()
         {
             // Clockwise
             _currentPos += 1;
-            _currentPosEncoder += 1;
+            // _currentPosEncoder += 1;
         }
         else if (_speed < 0)
         {
             // Anticlockwise  
             _currentPos -= 1;
-            _currentPosEncoder -= 1;
+            // _currentPosEncoder -= 1;
         }
         step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers)
+        // step(_currentPosEncoder & 0x3);
+
+        _lastStepTime = time;
+        return true;
+    }
+    else
+        return false;
+}
+
+
+boolean SMRE::runSpeedEncoder()
+{
+    unsigned long time = micros(); // millis()
+
+    if (time > _lastStepTime + _stepInterval)
+    {
+        if (_speed > 0)
+        {
+            // Clockwise
+            // _currentPos += 1;
+            _currentPosEncoder += 1;
+        }
+        else if (_speed < 0)
+        {
+            // Anticlockwise  
+            // _currentPos -= 1;
+            _currentPosEncoder -= 1;
+        }
+        // step(_currentPos & 0x3); // Bottom 2 bits (same as mod 4, but works with + and - numbers)
         step(_currentPosEncoder & 0x3);
 
         _lastStepTime = time;
@@ -185,6 +214,7 @@ float SMRE::desiredSpeed()
 }
 
 
+
 // This is called:
 //  after user changes:
 //      _targetPos (moveTo) 
@@ -203,11 +233,11 @@ float SMRE::timeSpeed()
     else
         requiredSpeed = -abs(distanceTo / time);
 
-    Serial.print("Distance: ");
-    Serial.println(distanceTo);
+    // Serial.print("Distance: ");
+    // Serial.println(distanceTo);
 
-    Serial.print("Time: ");
-    Serial.println(time);
+    // Serial.print("Time: ");
+    // Serial.println(time);
 
     return requiredSpeed;
 }
@@ -239,7 +269,7 @@ boolean SMRE::runEncoder()
         if (_targetPosEncoder == _currentPosEncoder)
             return false;
 
-        if (runSpeed())
+        if (runSpeedEncoder())
             // computeNewSpeed();
         return true;
     return false;
@@ -310,7 +340,7 @@ void SMRE::setSpeed(float speed)
 {
     _speed = speed;
     // if (_speed != 0)
-    _stepInterval = abs(100.0 / _speed);
+    _stepInterval = abs(10000.0 / _speed);
     // else
     //     _stepInterval = 0.0;
 }
@@ -458,6 +488,7 @@ void SMRE::disableOutputs()
 }
 
 
+
 void SMRE::enableOutputs()
 {
     if (! _pins) return;
@@ -494,6 +525,9 @@ void SMRE::runToNewPosition(long position)
 }
 
 
+// 
+// 
 // fake encoder position
-
+// 
+// 
 
