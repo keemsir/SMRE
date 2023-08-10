@@ -1,4 +1,5 @@
-
+// b3000 3000 1500 1500 100
+// encoder z: 150
 
 //#include <Stepper.h>
 //#include <AccelStepper.h>
@@ -39,6 +40,10 @@ const int motor_pin_14 = 18;
 const int motor_pin_15 = 19;
 const int motor_pin_16 = 20;
 
+
+const int encoderz_PinA = 2;
+const int encoderz_PinB = 3;
+
 unsigned long time_a, time_b;
 
 
@@ -78,17 +83,24 @@ int S[2] = {10, 15};
 
 
 // for test motor (3,4 motor is dummy)
-SMRE motor1(4, motor_pin_1, motor_pin_3, motor_pin_2, motor_pin_4);
-SMRE motor2(4, motor_pin_5, motor_pin_7, motor_pin_6, motor_pin_8);
-SMRE motor3(4, motor_pin_9, motor_pin_11, motor_pin_10, motor_pin_12);
-SMRE motor4(4, motor_pin_13, motor_pin_15, motor_pin_14, motor_pin_16);
+//SMRE motor1(4, motor_pin_1, motor_pin_3, motor_pin_2, motor_pin_4);
+//SMRE motor2(4, motor_pin_5, motor_pin_7, motor_pin_6, motor_pin_8);
+//SMRE motor3(4, motor_pin_9, motor_pin_11, motor_pin_10, motor_pin_12);
+//SMRE motor4(4, motor_pin_13, motor_pin_15, motor_pin_14, motor_pin_16);
 
 
 // for 4D-phantom
-//SMRE motor1(2, CW_x, CCW_x);
-//SMRE motor2(2, CW_y, CCW_y);
-//SMRE motor3(2, CW_z, CCW_z);
-//SMRE motor4(2, CW_Z, CCW_Z);
+SMRE motor1(2, CW_x, CCW_x);
+SMRE motor2(2, CW_y, CCW_y);
+SMRE motor3(2, CW_z, CCW_z);
+SMRE motor4(2, CW_Z, CCW_Z);
+
+
+
+volatile long encoderz_Pos = 0;
+volatile boolean encoderz_Aset = false;
+volatile boolean encoderz_Bset = false;
+
 
 
 char receivedCommand;
@@ -166,6 +178,10 @@ void setup()
 //  motor2.cycleTime(cycletime_);
 //  motor3.cycleTime(cycletime_);
 //  motor4.cycleTime(cycletime_);
+
+
+  attachInterrupt(digitalPinToInterrupt(encoderz_PinA), Encoder_z_CW, RISING); //encodery_PinA
+  attachInterrupt(digitalPinToInterrupt(encoderz_PinB), Encoder_z_CCW, RISING); //encodery_PinB
 }
 
 
@@ -291,6 +307,9 @@ void operateMotor()
       Serial.print("motor4 position: ");
       Serial.println(motor4.currentPosition());
       motor4.moveTo(-motor4.currentPosition());
+
+      Serial.print("encoder: ");
+      Serial.println(encoderz_Pos);
       
       time_a = millis();
     }
@@ -437,3 +456,26 @@ void samplePrint()
 }
 
 
+
+
+
+void Encoder_z_CW(){
+  int b = digitalRead(encoderz_PinB);
+  if(b > 0){
+    encoderz_Pos++;
+  }
+//  else{
+//    Count_pulses--;
+//  }
+}
+
+
+void Encoder_z_CCW(){
+  int a = digitalRead(encoderz_PinA);
+  if(a > 0){
+    encoderz_Pos--;
+  }
+//  else{
+//    Count_pulses--;
+//  }
+}
