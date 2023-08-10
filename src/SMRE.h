@@ -120,6 +120,8 @@ public:
     /// \return true if the motor was stepped.
     boolean runSpeed();
 
+    boolean runSpeedEncoder();
+
     /// Sets the maximum permitted speed. the run() function will accelerate
     /// up to the speed set by this function.
     /// \param[in] speed The desired maximum speed in steps per second. Must
@@ -313,3 +315,4 @@ private:
 };
 
 #endif
+
