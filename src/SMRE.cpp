@@ -1,4 +1,5 @@
 
+
 // SMRE.cpp
 //
 //
@@ -66,7 +67,7 @@ boolean SMRE::runSpeed()
         }
         else if (_speed < 0)
         {
-            // Anticlockwise  
+            // Anticlockwise
             _currentPos -= 1;
             // _currentPosEncoder -= 1;
         }
@@ -95,7 +96,7 @@ boolean SMRE::runSpeedEncoder()
         }
         else if (_speed < 0)
         {
-            // Anticlockwise  
+            // Anticlockwise
             // _currentPos -= 1;
             _currentPosEncoder -= 1;
         }
@@ -243,6 +244,7 @@ float SMRE::timeSpeed()
 }
 
 
+
 // Run the motor to implement speed and acceleration in order to proceed to the target position
 // You must call this at least once per step, preferably in your main loop
 // If the motor is in the desired position, the cost is very small
@@ -252,7 +254,7 @@ boolean SMRE::run()
     if (_EMERGENCY == false)
         if (_targetPos == _currentPos)
             return false;
-        
+
         // if (_targetPosEncoder == _currentPosEncoder)
         //     return false;
 
@@ -296,6 +298,7 @@ SMRE::SMRE(uint8_t pins, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4)
     _EMERGENCY = false;
     enableOutputs();
 }
+
 
 
 SMRE::SMRE(void (*forward)(), void (*backward)())
@@ -488,7 +491,6 @@ void SMRE::disableOutputs()
 }
 
 
-
 void SMRE::enableOutputs()
 {
     if (! _pins) return;
@@ -525,9 +527,16 @@ void SMRE::runToNewPosition(long position)
 }
 
 
+
 // 
 // 
 // fake encoder position
 // 
 // 
+// 
+// 
+// 
+// 
+// 
+
 
