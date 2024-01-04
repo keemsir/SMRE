@@ -23,7 +23,6 @@ const int CW_Z = 46;
 const int CCW_Z = 48;
 
 
-
 const int motor_pin_1 = 5;
 const int motor_pin_2 = 7;
 const int motor_pin_3 = 6;
@@ -44,11 +43,11 @@ const int motor_pin_14 = 19;
 const int motor_pin_15 = 18;
 const int motor_pin_16 = 20;
 
-//#define Encoder2_PinA 2
-//#define Encoder2_PinB 3
+const int Encoder_output_A = 2;
+const int Encoder_output_B = 3;
 
-const int Encoder2_PinA = 2;
-const int Encoder2_PinB = 3;
+#define Encoder2_PinA 2
+#define Encoder2_PinB 3
 
 volatile long encoder2_Pos = 0;
 
@@ -57,16 +56,16 @@ volatile long encoder2_Pos = 0;
 // initialize the Stepper library on pins 8 through 11:
 // Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
 
-SMRE stepper0(4, motor_pin_1, motor_pin_2, motor_pin_3, motor_pin_4);
-SMRE stepper1(4, motor_pin_5, motor_pin_6, motor_pin_7, motor_pin_8);
-SMRE stepper2(4, motor_pin_9, motor_pin_10, motor_pin_11, motor_pin_12);
-SMRE stepper3(4, motor_pin_13, motor_pin_14, motor_pin_15, motor_pin_16);
+//SMRE stepper1(4, motor_pin_1, motor_pin_2, motor_pin_3, motor_pin_4);
+//SMRE stepper2(4, motor_pin_5, motor_pin_6, motor_pin_7, motor_pin_8);
+//SMRE stepper3(4, motor_pin_9, motor_pin_10, motor_pin_11, motor_pin_12);
+//SMRE stepper4(4, motor_pin_13, motor_pin_14, motor_pin_15, motor_pin_16);
 
 // for 4D-phantom
-//SMRE motor0(2, CW_x, CCW_x);
-//SMRE motor1(2, CW_y, CCW_y);
-//SMRE motor2(2, CW_z, CCW_z);
-//SMRE motor3(2, CW_Z, CCW_Z);
+SMRE motor0(2, CW_x, CCW_x);
+SMRE motor1(2, CW_y, CCW_y);
+SMRE motor2(2, CW_z, CCW_z);
+SMRE motor3(2, CW_Z, CCW_Z);
 
 
 char receivedCommand;
@@ -245,7 +244,7 @@ float stepperDelay_1, stepperDelay_2, stepperDelay_3, stepperDelay_4 = 800;
 
 
 void loop() {
-  operMotor();
+//  operMotor();
 //  operMotorList();
 //  operMotor_E();
   
@@ -479,6 +478,7 @@ void timeStepCount()
 }
 
 
+
 // 'z' //
 void operMotor()
 {
@@ -488,24 +488,34 @@ void operMotor()
     //Serial.println(targetPos - currentPos);
     if (targetPos - currentPos > 0 & targetPos != currentPos)
     {
-      stepMotor1 (x % 4);
-      stepMotor2 (x % 4);
-      stepMotor3 (x % 4);
-      stepMotor4 (x % 4);
+      stepDriver1();
+      stepDriver2();
+      stepDriver3();
+      stepDriver4();
+//      stepMotor1 (x % 4);
+//      stepMotor2 (x % 4);
+//      stepMotor3 (x % 4);
+//      stepMotor4 (x % 4);
       delayMicroseconds(stepperDelay);
       x++;
       currentPos++;
+      currentPos_1++;
     }
 
     else if (targetPos - currentPos < 0 & targetPos != currentPos)
     {
-      stepMotor1 (x % 4);
-      stepMotor2 (x % 4);
-      stepMotor3 (x % 4);
-      stepMotor4 (x % 4);
+      stepDriver1();
+      stepDriver2();
+      stepDriver3();
+      stepDriver4();
+//      stepMotor1 (x % 4);
+//      stepMotor2 (x % 4);
+//      stepMotor3 (x % 4);
+//      stepMotor4 (x % 4);
       delayMicroseconds(stepperDelay);
       x--;
       currentPos--;
+      currentPos_1--;
     }
 
     else if (targetPos_C = currentPos)
@@ -550,6 +560,7 @@ void operMotorList()
       delayMicroseconds(stepperDelay);
       x++;
       currentPos++;
+      currentPos_1++;
 
       size_Count++;
       Serial.println(targetPos_C);
@@ -564,6 +575,7 @@ void operMotorList()
       delayMicroseconds(stepperDelay);
       x--;
       currentPos--;
+      currentPos_1--;
       
       size_Count++;
       Serial.println(targetPos_C);
@@ -691,7 +703,7 @@ void operMotor_E1()
 //    Serial.println(currentPos_1);
 //    Serial.println(axis_1);
 
-    if (time_millis - operTime < timeGap) // timeGap : time-axis
+    if (time_millis - operTime < 1000) // timeGap : time-axis
     {
       if (targetPos_1 - currentPos_1 > 0 & targetPos_1 != currentPos_1)
       {
@@ -708,7 +720,7 @@ void operMotor_E1()
         currentPos_1--;
       }
 
-      delayMicroseconds(100); //stepperDelay: 800, stepperDelay_1*1000
+      delayMicroseconds(1000); //stepperDelay: 800, stepperDelay_1*1000
     }
     else
     {
@@ -716,8 +728,8 @@ void operMotor_E1()
 //      Serial.println(millis() - operTime);
 //      Serial.print("Encoder Pos:");
 //      Serial.println(encoder2_Pos);
-//      Serial.println(targetPos_1);
-//      Serial.println(currentPos_1);
+      Serial.println(targetPos_1);
+      Serial.println(currentPos_1);
       pretargetPos_1 = currentPos_1;
       deterTrue_E1 = false;
     }
@@ -736,13 +748,15 @@ void operMotor_E2()
     {
       if (targetPos_2 - currentPos_2 > 0 & targetPos_2 != currentPos_2)
       {
-        stepMotor2 (axis_2 % 4);
+//        stepMotor2 (axis_2 % 4);
+        stepDriver2();
         axis_2++;
         currentPos_2++;
       }
       else if (targetPos_2 - currentPos_2 < 0 & targetPos_2 != currentPos_2)
       {
-        stepMotor2 (axis_2 % 4);
+//        stepMotor2 (axis_2 % 4);
+        stepDriver2();
         axis_2--;
         currentPos_2--;
       }
@@ -771,22 +785,24 @@ void operMotor_E3()
     //Serial.println(time_millis - operTime);
     //Serial.println(targetPos - currentPos);
     
-    if (time_millis - operTime < timeGap)
+    if (time_millis - operTime < 4000) //timeGap
     {
       if (targetPos_3 - currentPos_3 > 0 & targetPos_3 != currentPos_3)
       {
-        stepMotor3 (axis_3 % 4);
+        stepDriver3();
+//        stepMotor3 (axis_3 % 4);
         axis_3++;
         currentPos_3++;
       }
       else if (targetPos_3 - currentPos_3 < 0 & targetPos_3 != currentPos_3)
       {
-        stepMotor3 (axis_3 % 4);
+        stepDriver3();
+//        stepMotor3 (axis_3 % 4);
         axis_3--;
         currentPos_3--;
       }
 
-      delayMicroseconds(stepperDelay_3*1000);
+      delayMicroseconds(2000); //stepperDelay_3*1000
     }
 
     else
@@ -795,6 +811,9 @@ void operMotor_E3()
 //      Serial.println(millis() - operTime);
 //      Serial.print("Encoder Pos:");
 //      Serial.println(encoder2_Pos);
+//      Serial.println(stepperDelay_3*1000);
+      Serial.println(targetPos_3);
+      Serial.println(currentPos_3);
       pretargetPos_3 = currentPos_3;
       deterTrue_E3 = false;
     }
@@ -815,13 +834,15 @@ void operMotor_E4()
 
       if (targetPos_4 - currentPos_4 > 0 & targetPos_4 != currentPos_4)
       {
-        stepMotor4 (axis_4 % 4);
+        stepDriver4();
+//        stepMotor4 (axis_4 % 4);
         axis_4++;
         currentPos_4++;
       }
       else if (targetPos_4 - currentPos_4 < 0 & targetPos_4 != currentPos_4)
       {
-        stepMotor4 (axis_4 % 4);
+        stepDriver4();
+//        stepMotor4 (axis_4 % 4);
         axis_4--;
         currentPos_4--;
       }
@@ -1080,7 +1101,7 @@ void stepDriver2() // pin[0] is step, pin[1] is direction
 
 void stepDriver3() // pin[0] is step, pin[1] is direction
 {
-    digitalWrite(CCW_z, targetPos_3 - currentPos_3 > 0 ? HIGH : LOW); // Direction ? 2 : 0
+    digitalWrite(CCW_z, targetPos_3 - currentPos_3 < 0 ? HIGH : LOW); // Direction ? 2 : 0
     // Caution 200ns setup time 
     digitalWrite(CW_z, HIGH);
     // Caution, min Step pulse width for 3967 is 1microsec
@@ -1174,5 +1195,3 @@ void EMERGENCY_all()
   deterTrue_E3 = false;
   deterTrue_E4 = false;
 }
-
-
