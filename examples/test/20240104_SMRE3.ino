@@ -695,32 +695,29 @@ void operMotor_E1()
     {
       if (targetPos_1 - currentPos_1 > 0 & targetPos_1 != currentPos_1)
       {
-        stepMotor1 (axis_1 % 4);
+//        stepMotor1 (axis_1 % 4);
+        stepDriver1();
         axis_1++;
         currentPos_1++;
       }
       else if (targetPos_1 - currentPos_1 < 0 & targetPos_1 != currentPos_1)
       {
-        stepMotor1 (axis_1 % 4);
+//        stepMotor1 (axis_1 % 4);
+        stepDriver1();
         axis_1--;
         currentPos_1--;
       }
-      else if (targetPos_1 == currentPos_1)
-      {
-//        Serial.print("Operation time: ");
-//        Serial.println(millis() - operTime);
-//        deterTrue_E1 = false;
-      }
+
       delayMicroseconds(100); //stepperDelay: 800, stepperDelay_1*1000
     }
     else
     {
-      Serial.print("Operation time: ");
-      Serial.println(millis() - operTime);
-      Serial.print("Encoder Pos:");
-      Serial.println(encoder2_Pos);
-      Serial.println(targetPos_1);
-      Serial.println(currentPos_1);
+//      Serial.print("Operation time: ");
+//      Serial.println(millis() - operTime);
+//      Serial.print("Encoder Pos:");
+//      Serial.println(encoder2_Pos);
+//      Serial.println(targetPos_1);
+//      Serial.println(currentPos_1);
       pretargetPos_1 = currentPos_1;
       deterTrue_E1 = false;
     }
