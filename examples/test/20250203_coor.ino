@@ -1,4 +1,4 @@
-
+ 
 // 20230410 update
 
 // example: constant code b500 500 500 500 400
@@ -1193,7 +1193,7 @@ void Encoder_z_CCW(){
 }
 
 
-\
+
 void Encoder_Z_CW(){
   int b = digitalRead(encoderZ_PinB);
   if(b > 0){

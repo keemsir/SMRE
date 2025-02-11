@@ -30,7 +30,7 @@ const int CCW_z = 40;
 const int CW_Z = 46;
 const int CCW_Z = 48;
 
- 
+
 const int motor_pin_1 = 5;
 const int motor_pin_2 = 6;
 const int motor_pin_3 = 7;
