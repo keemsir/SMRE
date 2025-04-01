@@ -6,8 +6,8 @@
 const int motor1_stepPin = 38; // Step pin
 const int motor1_dirPin = 40; // Direction pin
 
-const int motor2_stepPin = 30; // Step pin
-const int motor2_dirPin = 32; // Direction pin
+const int motor2_stepPin = 46; // Step pin
+const int motor2_dirPin = 48; // Direction pin
 
 // 모터 핀 설정 (FULL4WIRE Mode)
 const int motor1_pin_1 = 2; // motor1_IN1
@@ -93,7 +93,7 @@ void setup() {
     Serial.println("2: 모터 2만 작동");
     Serial.println("e: 현재 엔코더 값 출력");
     Serial.println("r: 엔코더 값 리셋");
-    Serial.println("w: Print encoder toggle on/off");
+    Serial.println("w: Encoder toggle on/off");
     Serial.println("s: 비상 정지 (모터 동작 중 언제든지 입력)");
 
 }
@@ -121,7 +121,7 @@ void loop() {
     // 모터 실행
     stepper1.run();
     stepper2.run();
-    
+    /*
     // 50ms마다 엔코더 값 출력
     if (millis() - lastEncoderPrintTime >= encoderPrintInterval) {
         // 엔코더 값과 시간을 바로 Serial Monitor에 출력
@@ -141,6 +141,7 @@ void loop() {
         
         lastEncoderPrintTime = millis();
     }
+    */
 }
 
 
@@ -262,11 +263,12 @@ void moveMotorByArray() {
         long targetPosition2 = C2[i]*4; // 배열 C의 값 사용
         
         stepper1.moveTo(targetPosition);
-        stepper2.moveTo(targetPosition2);
+        stepper2.moveTo(-targetPosition2);
 
         unsigned long stepStartTime = millis();
         while (millis() - stepStartTime < 50) { // 비차단 방식으로 실행
             // 이 루프 안에서도 시리얼 입력 확인
+            Serial.println(encoder_count);
             if (Serial.available() > 0) {
                 char command = Serial.read();
                 if (command == 's') {  // 's'키를 비상 정지로 사용
@@ -366,4 +368,3 @@ void Encoder_z_CCW() {
     //     encoder_count++;
     // }
 }
-
