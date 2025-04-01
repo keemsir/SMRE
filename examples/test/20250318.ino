@@ -367,3 +367,85 @@ void Encoder_z_CCW() {
     // }
 }
 
+/*
+// 엔코더 상태 출력 시간 관리
+unsigned long lastEncoderPrintTime = 0;
+const unsigned long encoderPrintInterval = 50; // 50ms마다 엔코더 값 출력
+
+// 엔코더 값 기록을 위한 배열 추가
+const int maxRecords = 1000; // 최대 기록 개수 설정
+long encoderRecords[maxRecords]; // 엔코더 값 기록 배열
+unsigned long timeRecords[maxRecords]; // 시간 기록 배열
+int recordCount = 0; // 현재 기록 개수
+
+void loop() {
+    if (Serial.available() > 0) {
+        char command = Serial.read();
+
+        if (command == 'c') {
+            // 기존 코드...
+            recordCount = 0; // 기록 초기화
+            startTime = millis();
+            moveMotorByArray();
+            endTime = millis();
+            // 기존 코드...
+        }
+        else if (command == 'e') {
+            // 기존 코드...
+        }
+        else if (command == 'r') {
+            // 기존 코드...
+        }
+        else if (command == '1') {
+            // 기존 코드...
+            recordCount = 0; // 기록 초기화
+            moveSingleMotor(1);
+        }
+        else if (command == '2') {
+            // 기존 코드...
+            recordCount = 0; // 기록 초기화
+            moveSingleMotor(2);
+        }
+        else if (command == 'p') {
+            // 기록된 엔코더 값 출력
+            printEncoderRecords();
+        }
+    }
+
+    // 모터 실행
+    stepper1.run();
+    stepper2.run();
+    
+    // 50ms마다 엔코더 값 기록
+    if (millis() - lastEncoderPrintTime >= encoderPrintInterval) {
+        // 엔코더 값 기록
+        if (recordCount < maxRecords) {
+            encoderRecords[recordCount] = encoder_count;
+            timeRecords[recordCount] = millis() - startTime;
+            recordCount++;
+        }
+        
+        // 콘솔에 현재 엔코더 값 출력 (기존 코드)
+        if (encoder_count != last_encoder_count) {
+            Serial.print("Encoder position: ");
+            Serial.println(encoder_count);
+            last_encoder_count = encoder_count;
+        }
+        
+        lastEncoderPrintTime = millis();
+    }
+}
+
+// 기록된 엔코더 값 출력 함수
+void printEncoderRecords() {
+    Serial.println("Time(ms), Encoder Value");
+    for (int i = 0; i < recordCount; i++) {
+        Serial.print(timeRecords[i]);
+        Serial.print(", ");
+        Serial.println(encoderRecords[i]);
+    }
+    Serial.print("Total records: ");
+    Serial.println(recordCount);
+}
+
+*/
