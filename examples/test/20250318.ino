@@ -3,8 +3,11 @@
 #include <AccelStepper.h>
 
 // (DRIVER Mode)
-const int stepPin = 38; // Step pin
-const int dirPin = 40; // Direction pin
+const int motor1_stepPin = 38; // Step pin
+const int motor1_dirPin = 40; // Direction pin
+
+const int motor2_stepPin = 30; // Step pin
+const int motor2_dirPin = 32; // Direction pin
 
 // 모터 핀 설정 (FULL4WIRE Mode)
 const int motor1_pin_1 = 2; // IN1
@@ -18,21 +21,33 @@ const int motor2_pin_3 = 8; // IN3
 const int motor2_pin_4 = 9; // IN4
 
 // 로터리 엔코더 핀 설정
-const int encoderz_PinA = 21;
-const int encoderz_PinB = 20;
+const int encoderz_PinA = 19;
+const int encoderz_PinB = 18;
 
 // 엔코더 카운터 변수
 volatile long encoder_count = 0;
 volatile long last_encoder_count = 0;
+
+// 엔코더 상태 출력 시간 관리
+unsigned long lastEncoderPrintTime = 0;
+const unsigned long encoderPrintInterval = 50; // 50ms마다 엔코더 값 출력
+
+// 엔코더 값 기록을 위한 배열 추가
+const int maxRecords = 500; // 최대 기록 개수 설정
+long encoderRecords[maxRecords]; // 엔코더 값 기록 배열
+unsigned long timeRecords[maxRecords]; // 시간 기록 배열
+int recordCount = 0; // 현재 기록 개수
+
 
 // 모터 동작 상태 변수
 bool isRunning = false;
 bool emergencyStop = false;
 
 // AccelStepper 객체 생성
-AccelStepper stepper1(AccelStepper::FULL4WIRE, motor1_pin_1, motor1_pin_3, motor1_pin_2, motor1_pin_4);
-AccelStepper stepper2(AccelStepper::FULL4WIRE, motor2_pin_1, motor2_pin_3, motor2_pin_2, motor2_pin_4);
-//AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
+//AccelStepper stepper1(AccelStepper::FULL4WIRE, motor1_pin_1, motor1_pin_3, motor1_pin_2, motor1_pin_4);
+//AccelStepper stepper2(AccelStepper::FULL4WIRE, motor2_pin_1, motor2_pin_3, motor2_pin_2, motor2_pin_4);
+AccelStepper stepper1(AccelStepper::DRIVER, motor1_stepPin, motor1_dirPin);
+AccelStepper stepper2(AccelStepper::DRIVER, motor2_stepPin, motor2_dirPin);
 
 // Array C
 int C1[] = {24, 26, 26, 30, 32, 36, 40, 44, 48, 50, 54, 56, 58, 60, 60, 62, 64, 70, 76, 80, 84, 86, 88, 94, 98, 102, 108, 112, 116, 120, 126, 130, 130, 134, 138, 144, 150, 150, 152, 154, 156, 158, 162, 164, 168, 168, 170, 172, 174, 172, 174, 176, 180, 184, 186, 186, 186, 186, 186, 184, 180, 176, 172, 168, 164, 160, 154, 150, 142, 138, 134, 130, 124, 114, 108, 104, 100, 98, 92, 86, 80, 74, 68, 60, 56, 52, 48, 44, 40, 38, 32, 28, 24, 22, 20, 18, 16, 16, 16, 16, 16, 18, 22, 24, 28, 34, 40, 40, 44, 46, 50, 54, 56, 58, 62, 66, 68, 70, 76, 80, 80, 82, 92, 102, 104, 108, 110, 112, 114, 120, 128, 130, 134, 134, 138, 142, 144, 146, 146, 150, 154, 156, 158, 162, 160, 164, 166, 168, 172, 174, 174, 176, 178, 178, 176, 170, 164, 160, 156, 154, 148, 142, 136, 132, 126, 122, 114, 108, 104, 98, 94, 88, 84, 76, 72, 66, 62, 60, 54, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 14, 10, 6, 6, 8, 12, 14, 16, 18, 24, 28, 32, 38, 40, 44, 46, 48, 52, 56, 56, 56, 60, 64, 68, 74, 78, 80, 84, 88, 90, 96, 98, 102, 104, 106, 108, 110, 114, 118, 126, 134, 138, 144, 144, 148, 150, 152, 156, 158, 160, 162, 164, 166, 168, 168, 168, 170, 174, 178, 180, 182, 184, 184, 188, 184, 184, 182, 174, 170, 164, 164, 158, 154, 146, 140, 128, 122, 116, 108, 98, 92, 84, 78, 74, 68, 62, 58, 56, 54, 50, 44, 42, 38, 36, 34, 32, 30, 26, 26, 22, 20, 20, 20, 20};
@@ -48,8 +63,8 @@ unsigned long startTime = 0;
 unsigned long endTime = 0;
 
 // 엔코더 상태 출력 시간 관리
-unsigned long lastEncoderPrintTime = 0;
-const unsigned long encoderPrintInterval = 50; // default: 500ms마다 엔코더 값 출력
+//unsigned long lastEncoderPrintTime = 0;
+//const unsigned long encoderPrintInterval = 50; // default: 500ms마다 엔코더 값 출력
 
 void setup() {
     Serial.begin(115200);
@@ -105,57 +120,26 @@ void loop() {
     // 시리얼 입력 확인 (비상 정지 포함)
     checkSerialInput();
 
-
-    // if (Serial.available() > 0) {
-    //     char command = Serial.read();
-
-    //     if (command == 'c') {
-    //         Serial.println("Executing movement based on array C...");
-    //         // 시작 시간 기록
-    //         startTime = millis();
-    //         moveMotorByArray();
-    //         // 종료 시간 기록
-    //         endTime = millis();
-            
-    //         // 총 소요 시간 계산 및 출력
-    //         unsigned long totalTime = endTime - startTime;
-    //         Serial.print("Total execution time: ");
-    //         Serial.print(totalTime);
-    //         Serial.println(" milliseconds");
-    //     }
-    //     else if (command == 'e') {
-    //         // 엔코더 값 출력 명령
-    //         Serial.print("Current encoder count: ");
-    //         Serial.println(encoder_count);
-    //     }
-    //     else if (command == 'r') {
-    //         // 엔코더 값 리셋 명령
-    //         encoder_count = 0;
-    //         Serial.println("Encoder count reset to 0");
-    //     }
-    //     else if (command == '1') {
-    //         // 모터 1만 작동
-    //         Serial.println("Moving only motor 1");
-    //         moveSingleMotor(1);
-    //     }
-    //     else if (command == '2') {
-    //         // 모터 2만 작동
-    //         Serial.println("Moving only motor 2");
-    //         moveSingleMotor(2);
-    //     }
-    // }
-
     // 모터 실행
     stepper1.run();
     stepper2.run();
     
-    // 주기적으로 엔코더 값 변화 확인 및 출력
-    if (millis() - lastEncoderPrintTime > encoderPrintInterval) {
+    // 50ms마다 엔코더 값 기록
+    if (millis() - lastEncoderPrintTime >= encoderPrintInterval) {
+        // 엔코더 값 기록
+        if (recordCount < maxRecords) {
+            encoderRecords[recordCount] = encoder_count;
+            timeRecords[recordCount] = millis() - startTime;
+            recordCount++;
+        }
+        
+        // 콘솔에 현재 엔코더 값 출력 (기존 코드)
         if (encoder_count != last_encoder_count) {
             Serial.print("Encoder position: ");
             Serial.println(encoder_count);
             last_encoder_count = encoder_count;
         }
+        
         lastEncoderPrintTime = millis();
     }
 }
@@ -175,7 +159,9 @@ void checkSerialInput() {
         if (!isRunning) {  // 모터가 동작 중이 아닐 때만 다른 명령 처리
             if (command == 'c') {
                 Serial.println("Executing movement based on array C...");
+                
                 // 시작 시간 기록
+                recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
                 moveMotorByArray();
@@ -203,6 +189,7 @@ void checkSerialInput() {
                 // 모터 1만 작동
                 Serial.println("Moving only motor 1");
                 // 시작 시간 기록
+                recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
                 moveSingleMotor(1);
@@ -220,6 +207,7 @@ void checkSerialInput() {
                 // 모터 2만 작동
                 Serial.println("Moving only motor 2");
                 // 시작 시간 기록
+                recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
                 moveSingleMotor(2);
@@ -232,6 +220,10 @@ void checkSerialInput() {
                 Serial.print("Total execution time: ");
                 Serial.print(totalTime);
                 Serial.println(" milliseconds");
+            }
+            else if (command == 'p') {
+                // 기록된 엔코더 값 출력
+                printEncoderRecords();
             }
         }
     }
@@ -367,75 +359,6 @@ void Encoder_z_CCW() {
     // }
 }
 
-/*
-// 엔코더 상태 출력 시간 관리
-unsigned long lastEncoderPrintTime = 0;
-const unsigned long encoderPrintInterval = 50; // 50ms마다 엔코더 값 출력
-
-// 엔코더 값 기록을 위한 배열 추가
-const int maxRecords = 1000; // 최대 기록 개수 설정
-long encoderRecords[maxRecords]; // 엔코더 값 기록 배열
-unsigned long timeRecords[maxRecords]; // 시간 기록 배열
-int recordCount = 0; // 현재 기록 개수
-
-void loop() {
-    if (Serial.available() > 0) {
-        char command = Serial.read();
-
-        if (command == 'c') {
-            // 기존 코드...
-            recordCount = 0; // 기록 초기화
-            startTime = millis();
-            moveMotorByArray();
-            endTime = millis();
-            // 기존 코드...
-        }
-        else if (command == 'e') {
-            // 기존 코드...
-        }
-        else if (command == 'r') {
-            // 기존 코드...
-        }
-        else if (command == '1') {
-            // 기존 코드...
-            recordCount = 0; // 기록 초기화
-            moveSingleMotor(1);
-        }
-        else if (command == '2') {
-            // 기존 코드...
-            recordCount = 0; // 기록 초기화
-            moveSingleMotor(2);
-        }
-        else if (command == 'p') {
-            // 기록된 엔코더 값 출력
-            printEncoderRecords();
-        }
-    }
-
-    // 모터 실행
-    stepper1.run();
-    stepper2.run();
-    
-    // 50ms마다 엔코더 값 기록
-    if (millis() - lastEncoderPrintTime >= encoderPrintInterval) {
-        // 엔코더 값 기록
-        if (recordCount < maxRecords) {
-            encoderRecords[recordCount] = encoder_count;
-            timeRecords[recordCount] = millis() - startTime;
-            recordCount++;
-        }
-        
-        // 콘솔에 현재 엔코더 값 출력 (기존 코드)
-        if (encoder_count != last_encoder_count) {
-            Serial.print("Encoder position: ");
-            Serial.println(encoder_count);
-            last_encoder_count = encoder_count;
-        }
-        
-        lastEncoderPrintTime = millis();
-    }
-}
-
 // 기록된 엔코더 값 출력 함수
 void printEncoderRecords() {
     Serial.println("Time(ms), Encoder Value");
@@ -447,5 +370,3 @@ void printEncoderRecords() {
     Serial.print("Total records: ");
     Serial.println(recordCount);
 }
-
-*/
