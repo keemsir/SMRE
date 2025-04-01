@@ -10,19 +10,22 @@ const int motor2_stepPin = 30; // Step pin
 const int motor2_dirPin = 32; // Direction pin
 
 // 모터 핀 설정 (FULL4WIRE Mode)
-const int motor1_pin_1 = 2; // IN1
-const int motor1_pin_2 = 3; // IN2
-const int motor1_pin_3 = 4; // IN3
-const int motor1_pin_4 = 5; // IN4
+const int motor1_pin_1 = 2; // motor1_IN1
+const int motor1_pin_2 = 3; // motor1_IN2
+const int motor1_pin_3 = 4; // motor1_IN3
+const int motor1_pin_4 = 5; // motor1_IN4
 
-const int motor2_pin_1 = 6; // IN1
-const int motor2_pin_2 = 7; // IN2
-const int motor2_pin_3 = 8; // IN3
-const int motor2_pin_4 = 9; // IN4
+const int motor2_pin_1 = 6; // motor2_IN1
+const int motor2_pin_2 = 7; // motor2_IN2
+const int motor2_pin_3 = 8; // motor2_IN3
+const int motor2_pin_4 = 9; // motor2_IN4
 
 // 로터리 엔코더 핀 설정
 const int encoderz_PinA = 19;
 const int encoderz_PinB = 18;
+
+// 엔코더 모니터링 모드 
+bool encoderMonitorMode = false;
 
 // 엔코더 카운터 변수
 volatile long encoder_count = 0;
@@ -31,12 +34,6 @@ volatile long last_encoder_count = 0;
 // 엔코더 상태 출력 시간 관리
 unsigned long lastEncoderPrintTime = 0;
 const unsigned long encoderPrintInterval = 50; // 50ms마다 엔코더 값 출력
-
-// 엔코더 값 기록을 위한 배열 추가
-const int maxRecords = 500; // 최대 기록 개수 설정
-long encoderRecords[maxRecords]; // 엔코더 값 기록 배열
-unsigned long timeRecords[maxRecords]; // 시간 기록 배열
-int recordCount = 0; // 현재 기록 개수
 
 
 // 모터 동작 상태 변수
@@ -96,6 +93,7 @@ void setup() {
     Serial.println("2: 모터 2만 작동");
     Serial.println("e: 현재 엔코더 값 출력");
     Serial.println("r: 엔코더 값 리셋");
+    Serial.println("w: Print encoder toggle on/off");
     Serial.println("s: 비상 정지 (모터 동작 중 언제든지 입력)");
 
 }
@@ -124,16 +122,17 @@ void loop() {
     stepper1.run();
     stepper2.run();
     
-    // 50ms마다 엔코더 값 기록
+    // 50ms마다 엔코더 값 출력
     if (millis() - lastEncoderPrintTime >= encoderPrintInterval) {
-        // 엔코더 값 기록
-        if (recordCount < maxRecords) {
-            encoderRecords[recordCount] = encoder_count;
-            timeRecords[recordCount] = millis() - startTime;
-            recordCount++;
+        // 엔코더 값과 시간을 바로 Serial Monitor에 출력
+        if (isRunning) {
+            unsigned long currentTime = millis() - startTime;
+            Serial.print(currentTime);
+            Serial.print(", ");
+            Serial.println(encoder_count);
         }
         
-        // 콘솔에 현재 엔코더 값 출력 (기존 코드)
+        // 콘솔에 현재 엔코더 값 변화 출력 (기존 코드)
         if (encoder_count != last_encoder_count) {
             Serial.print("Encoder position: ");
             Serial.println(encoder_count);
@@ -143,6 +142,7 @@ void loop() {
         lastEncoderPrintTime = millis();
     }
 }
+
 
 // 시리얼 입력 확인 함수
 void checkSerialInput() {
@@ -161,9 +161,10 @@ void checkSerialInput() {
                 Serial.println("Executing movement based on array C...");
                 
                 // 시작 시간 기록
-                recordCount = 0; // 기록 초기화
+                // recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
                 moveMotorByArray();
                 isRunning = false;
                 // 종료 시간 기록
@@ -189,9 +190,10 @@ void checkSerialInput() {
                 // 모터 1만 작동
                 Serial.println("Moving only motor 1");
                 // 시작 시간 기록
-                recordCount = 0; // 기록 초기화
+                // recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
+                Serial.println("Time(ms), Encoder Value"); // 헤더 출력 추가
                 moveSingleMotor(1);
                 isRunning = false;
                 // 종료 시간 기록
@@ -207,9 +209,10 @@ void checkSerialInput() {
                 // 모터 2만 작동
                 Serial.println("Moving only motor 2");
                 // 시작 시간 기록
-                recordCount = 0; // 기록 초기화
+                // recordCount = 0; // 기록 초기화
                 startTime = millis();
                 isRunning = true;
+                Serial.println("Time(ms), Encoder Value"); // 헤더 출력 추가
                 moveSingleMotor(2);
                 isRunning = false;
                 // 종료 시간 기록
@@ -221,9 +224,14 @@ void checkSerialInput() {
                 Serial.print(totalTime);
                 Serial.println(" milliseconds");
             }
-            else if (command == 'p') {
-                // 기록된 엔코더 값 출력
-                printEncoderRecords();
+            else if (command == 'w') {
+                // 엔코더 값 변화 모니터링 모드 토글
+                encoderMonitorMode = !encoderMonitorMode;
+                if (encoderMonitorMode) {
+                    Serial.println("Encoder monitoring mode: ON - All encoder changes will be printed");
+                } else {
+                    Serial.println("Encoder monitoring mode: OFF");
+                }
             }
         }
     }
@@ -359,14 +367,3 @@ void Encoder_z_CCW() {
     // }
 }
 
-// 기록된 엔코더 값 출력 함수
-void printEncoderRecords() {
-    Serial.println("Time(ms), Encoder Value");
-    for (int i = 0; i < recordCount; i++) {
-        Serial.print(timeRecords[i]);
-        Serial.print(", ");
-        Serial.println(encoderRecords[i]);
-    }
-    Serial.print("Total records: ");
-    Serial.println(recordCount);
-}
