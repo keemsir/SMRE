@@ -1,0 +1,561 @@
+-----Starting Stepper Motor----- 1 motor
+input axis: setMaxSpeed, Move
+Distance: 500, Delay: 500
+y-axis motor position: 500
+time(y): 23005
+Encoder_position: 100
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -101
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 99
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -102
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2610
+Encoder_position: 98
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2610
+Encoder_position: -103
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2610
+Encoder_position: 97
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -104
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 96
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2608
+Encoder_position: -105
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 95
+Encoder Diff: 0
+STOP 
+
+2motor
+
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+x-axis motor position: -500
+time(x): 90803
+Position encoder(x): 93
+y-axis motor position: 500
+time(y): 44314
+Encoder_position: 93
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2635
+Position encoder(x): -108
+y-axis motor position: -500
+time(y): 2636
+Encoder_position: -108
+Encoder Diff: 0
+x-axis motor position: -500
+time(x): 2637
+Position encoder(x): 92
+y-axis motor position: 500
+time(y): 2635
+Encoder_position: 92
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2636
+Position encoder(x): -109
+y-axis motor position: -500
+time(y): 2636
+Encoder_position: -109
+Encoder Diff: 0
+x-axis motor position: -500
+time(x): 2637
+Position encoder(x): 91
+y-axis motor position: 500
+time(y): 2637
+Encoder_position: 91
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2636
+Position encoder(x): -110
+y-axis motor position: -500
+time(y): 2636
+Encoder_position: -110
+Encoder Diff: 0
+x-axis motor position: -500
+time(x): 2635
+Position encoder(x): 89
+y-axis motor position: 500
+time(y): 2635
+Encoder_position: 89
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2636
+Position encoder(x): -112
+y-axis motor position: -500
+time(y): 2637
+Encoder_position: -112
+Encoder Diff: 0
+x-axis motor position: -500
+time(x): 2637
+Position encoder(x): 88
+y-axis motor position: 500
+time(y): 2636
+Encoder_position: 88
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2636
+Position encoder(x): -113
+y-axis motor position: -500
+time(y): 2636
+Encoder_position: -113
+Encoder Diff: 0
+x-axis motor position: -500
+time(x): 2636
+Position encoder(x): 87
+y-axis motor position: 500
+time(y): 2636
+Encoder_position: 87
+Encoder Diff: 0
+x-axis motor position: 500
+time(x): 2635
+Position encoder(x): -114
+y-axis motor position: -500
+time(y): 2636
+Encoder_position: -114
+Encoder Diff: 0
+STOP 
+
+
+-----Starting Stepper Motor----- 3motor
+input axis: setMaxSpeed, Move
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+x-axis motor position: -500
+time(x): 12987
+Position encoder(x): 100
+y-axis motor position: 500
+time(y): 12989
+Encoder_position: 100
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 12996
+Encoder_position: 100
+x-axis motor position: 500
+time(x): 2649
+Position encoder(x): -101
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -101
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -101
+x-axis motor position: -500
+time(x): 2650
+Position encoder(x): 99
+y-axis motor position: 500
+time(y): 2650
+Encoder_position: 99
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2650
+Encoder_position: 99
+x-axis motor position: 500
+time(x): 2649
+Position encoder(x): -102
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -102
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -102
+x-axis motor position: -500
+time(x): 2650
+Position encoder(x): 98
+y-axis motor position: 500
+time(y): 2650
+Encoder_position: 98
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2651
+Encoder_position: 98
+x-axis motor position: 500
+time(x): 2649
+Position encoder(x): -103
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -103
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -103
+x-axis motor position: -500
+time(x): 2650
+Position encoder(x): 97
+y-axis motor position: 500
+time(y): 2651
+Encoder_position: 97
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2650
+Encoder_position: 97
+x-axis motor position: 500
+time(x): 2650
+Position encoder(x): -104
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -104
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -104
+x-axis motor position: -500
+time(x): 2650
+Position encoder(x): 95
+y-axis motor position: 500
+time(y): 2650
+Encoder_position: 95
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2650
+Encoder_position: 95
+x-axis motor position: 500
+time(x): 2649
+Position encoder(x): -106
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -106
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -106
+x-axis motor position: -500
+time(x): 2650
+Position encoder(x): 94
+y-axis motor position: 500
+time(y): 2650
+Encoder_position: 94
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2650
+Encoder_position: 94
+x-axis motor position: 500
+time(x): 2649
+Position encoder(x): -107
+y-axis motor position: -500
+time(y): 2649
+Encoder_position: -107
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2649
+Encoderz_position: -107
+STOP 
+
+
+
+-----Starting Stepper Motor----- 4motor
+input axis: setMaxSpeed, Move
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+Distance: 500, Delay: 500
+x-axis motor position: -500
+time(x): 14172
+Position encoder(x): 100
+y-axis motor position: 500
+time(y): 14175
+Encoder_position: 100
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 14182
+Encoder_position: 100
+Z-axis motor position: 500
+time(Z): 14187
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2674
+Position encoder(x): -101
+y-axis motor position: -500
+time(y): 2674
+Encoder_position: -101
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2675
+Encoderz_position: -101
+Z-axis motor position: -500
+time(Z): 2675
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2681
+Position encoder(x): 99
+y-axis motor position: 500
+time(y): 2680
+Encoder_position: 99
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2679
+Encoder_position: 99
+Z-axis motor position: 500
+time(Z): 2680
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2680
+Position encoder(x): -102
+y-axis motor position: -500
+time(y): 2680
+Encoder_position: -102
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2680
+Encoderz_position: -102
+Z-axis motor position: -500
+time(Z): 2680
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2679
+Position encoder(x): 98
+y-axis motor position: 500
+time(y): 2679
+Encoder_position: 98
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2679
+Encoder_position: 98
+Z-axis motor position: 500
+time(Z): 2679
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2681
+Position encoder(x): -103
+y-axis motor position: -500
+time(y): 2682
+Encoder_position: -103
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2682
+Encoderz_position: -103
+Z-axis motor position: -500
+time(Z): 2681
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2682
+Position encoder(x): 97
+y-axis motor position: 500
+time(y): 2682
+Encoder_position: 97
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2682
+Encoder_position: 97
+Z-axis motor position: 500
+time(Z): 2682
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2682
+Position encoder(x): -104
+y-axis motor position: -500
+time(y): 2682
+Encoder_position: -104
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2685
+Encoderz_position: -104
+Z-axis motor position: -500
+time(Z): 2684
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2683
+Position encoder(x): 95
+y-axis motor position: 500
+time(y): 2682
+Encoder_position: 95
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2679
+Encoder_position: 95
+Z-axis motor position: 500
+time(Z): 2681
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2682
+Position encoder(x): -106
+y-axis motor position: -500
+time(y): 2682
+Encoder_position: -106
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2682
+Encoderz_position: -106
+Z-axis motor position: -500
+time(Z): 2682
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2681
+Position encoder(x): 94
+y-axis motor position: 500
+time(y): 2682
+Encoder_position: 94
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2683
+Encoder_position: 94
+Z-axis motor position: 500
+time(Z): 2681
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2682
+Position encoder(x): -107
+y-axis motor position: -500
+time(y): 2681
+Encoder_position: -107
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2680
+Encoderz_position: -107
+Z-axis motor position: -500
+time(Z): 2682
+EncoderZ_position: 0
+x-axis motor position: -500
+time(x): 2682
+Position encoder(x): 93
+y-axis motor position: 500
+time(y): 2683
+Encoder_position: 93
+Encoder Diff: 0
+z-axis motor position: -500
+time(z): 2682
+Encoder_position: 93
+Z-axis motor position: 500
+time(Z): 2682
+EncoderZ_position: 0
+x-axis motor position: 500
+time(x): 2683
+Position encoder(x): -108
+y-axis motor position: -500
+time(y): 2683
+Encoder_position: -108
+Encoder Diff: 0
+z-axis motor position: 500
+time(z): 2684
+Encoderz_position: -108
+Z-axis motor position: -500
+time(Z): 2684
+EncoderZ_position: 0
+
+
+----------------------------------single
+Distance: 500, Delay: 500
+z-axis motor position: -500
+time(z): 37571
+Encoder_position: -9
+z-axis motor position: 500
+time(z): 2602
+Encoderz_position: -9
+z-axis motor position: -500
+time(z): 2603
+Encoder_position: -9
+z-axis motor position: 500
+time(z): 2603
+Encoderz_position: -9
+z-axis motor position: -500
+time(z): 2603
+Encoder_position: -9
+z-axis motor position: 500
+time(z): 2603
+Encoderz_position: -9
+z-axis motor position: -500
+time(z): 2603
+Encoder_position: -9
+z-axis motor position: 500
+time(z): 2603
+Encoderz_position: -9
+z-axis motor position: -500
+time(z): 2603
+Encoder_position: -9
+z-axis motor position: 500
+time(z): 2603
+Encoderz_position: -9
+z-axis motor position: -500
+time(z): 2603
+Encoder_position: -9
+STOP 
+Distance: 500, Delay: 500
+Z-axis motor position: 500
+time(Z): 69781
+EncoderZ_position: 0
+Z-axis motor position: -500
+time(Z): 2618
+EncoderZ_position: 0
+Z-axis motor position: 500
+time(Z): 2616
+EncoderZ_position: 0
+Z-axis motor position: -500
+time(Z): 2616
+EncoderZ_position: 0
+Z-axis motor position: 500
+time(Z): 2617
+EncoderZ_position: 0
+Z-axis motor position: -500
+time(Z): 2617
+EncoderZ_position: 0
+Z-axis motor position: 500
+time(Z): 2616
+EncoderZ_position: 0
+Z-axis motor position: -500
+time(Z): 2617
+EncoderZ_position: 0
+Z-axis motor position: 500
+time(Z): 2616
+EncoderZ_position: 0
+Z-axis motor position: -500
+time(Z): 2617
+EncoderZ_position: 0
+STOP 
+Distance: 500, Delay: 500
+y-axis motor position: 500
+time(y): 102934
+Encoder_position: 91
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2608
+Encoder_position: -110
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 90
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -111
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 89
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -112
+Encoder Diff: 0
+y-axis motor position: 500
+time(y): 2611
+Encoder_position: 88
+Encoder Diff: 0
+y-axis motor position: -500
+time(y): 2609
+Encoder_position: -113
+Encoder Diff: 0
+STOP 
