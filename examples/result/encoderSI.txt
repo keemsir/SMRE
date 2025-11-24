@@ -1,0 +1,91 @@
+Encoder_position: 160
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -160
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 161
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -159
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 162
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2789
+Encoder_position: -158
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2790
+Encoder_position: 163
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2789
+Encoder_position: -157
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 164
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -156
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 165
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -155
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 166
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -154
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2790
+Encoder_position: 167
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2789
+Encoder_position: -153
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2790
+Encoder_position: 168
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2789
+Encoder_position: -152
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 169
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2790
+Encoder_position: -151
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2789
+Encoder_position: 170
+Encoder Diff: 0
+y-axis motor position: -800
+time(y): 2789
+Encoder_position: -150
+Encoder Diff: 0
+y-axis motor position: 800
+time(y): 2790
+Encoder_position: 171
+Encoder Diff: 0
+STOP 
