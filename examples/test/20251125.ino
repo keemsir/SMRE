@@ -36,7 +36,7 @@ bool encoderMonitorMode = false;
 
 // 엔코더 카운터 변수
 volatile long encoder_count = 0;
-// volatile long last_encoder_count = 0; // Not used
+volatile long last_encoder_count = 0; 
 
 // 엔코더 상태 출력 시간 관리
 unsigned long lastEncoderPrintTime = 0;
@@ -55,23 +55,30 @@ AccelStepper stepper3(AccelStepper::FULL4WIRE, motor3_pin_1, motor3_pin_3, motor
 AccelStepper stepper4(AccelStepper::FULL4WIRE, motor4_pin_1, motor4_pin_3, motor4_pin_2, motor4_pin_4); // Motor 4 (C): FULL4WIRE
 
 // ==============================================================================
-// 1. New Position Data (Converted to STEPS from mm)
-// Conversion Formulas:
-// Nx = Dx / 0.006
-// Ny = Dy / 0.006
-// Nz = Hz / 0.0184
-// Nc = Hc / 0.0201
+// 1. New Position Data (Converted to STEPS from 0.1mm units)
+// **Position data is in 0.1mm units, so we divide by 10 to get mm.**
+// Conversion Formulas (mm -> Steps):
+// Dx' = Dx / 10 (mm)
+// Ny' = Ny / 10 (mm)
+// Nz' = Nz / 10 (mm)
+// Nc' = Nc / 10 (mm)
+// 
+// Step Calculation:
+// Nx = round(Dx' / 0.006) = round(Dx / 0.06)
+// Ny = round(Ny' / 0.006) = round(Dy / 0.06)
+// Nz = round(Nz' / 0.0184) = round(Hz / 0.184)
+// Nc = round(Nc' / 0.0201) = round(Hc / 0.201)
 // Note: Steps are rounded to the nearest integer.
 // ==============================================================================
 
-// Motor 1 (X) Steps: Dx/0.006
-int Nx[] = {0, -333, -667, -1000, -1333, -1600, -1867, -2133, -2400, -1000, 400, 1800, 3200, 2467, 1733, 1000, 267, 400, 533, 667, 800, 533, 267, 0, -267, -267, 467, 1200, 1933, 2667, 2800, 2933, 3067, 3200, 2067, 933, -200, -1333, -1000, -667, -333};
-// Motor 2 (Y) Steps: Dy/0.006
-int Ny[] = {0, 2067, 4133, 6200, 8267, 8933, 9600, 10267, 10933, 10867, 10800, 10733, 10667, 10733, 10800, 10867, 10933, 11800, 12667, 13533, 14400, 14267, 14133, 14000, 13867, 13867, 13533, 13200, 12867, 12533, 12600, 12667, 12733, 12800, 10267, 7733, 5200, 2667, 2000, 1333, 667};
-// Motor 3 (Z) Steps: Hz/0.0184
-int Nz[] = {0, -14, -27, -41, -54, -299, -543, -788, -1033, -1182, -1332, -1481, -1630, -2486, -3342, -4198, -5054, -4918, -4783, -4647, -4511, -3125, -1739, -353, 1033, 1033, 109, -815, -1739, -2663, -2541, -2418, -2296, -2174, -1671, -1168, -666, -163, -122, -82, -41};
-// Motor 4 (C) Steps: Hc/0.0201
-int Nc[] = {0, 199, 498, 896, 1294, 1791, 2388, 2985, 3383, 3881, 4478, 5174, 6070, 6567, 6965, 7263, 7463, 7861, 8060, 8159, 8259, 8458, 8557, 8657, 8856, 8856, 8557, 8159, 7661, 6965, 5970, 5075, 3881, 3283, 2687, 2089, 1493, 995, 597, 299, 100};
+// Motor 1 (X) Steps: Dx/0.06
+int Nx[] = {0, -33, -67, -100, -133, -160, -187, -213, -240, -100, 40, 180, 320, 247, 173, 100, 27, 40, 53, 67, 80, 53, 27, 0, -27, -27, 47, 120, 193, 267, 280, 293, 307, 320, 207, 93, -20, -133, -100, -67, -33};
+// Motor 2 (Y) Steps: Dy/0.06
+int Ny[] = {0, 207, 413, 620, 827, 893, 960, 1027, 1093, 1087, 1080, 1073, 1067, 1073, 1080, 1087, 1093, 1180, 1267, 1353, 1440, 1427, 1413, 1400, 1387, 1387, 1353, 1320, 1287, 1253, 1260, 1267, 1273, 1280, 1027, 773, 520, 267, 200, 133, 67};
+// Motor 3 (Z) Steps: Hz/0.184
+int Nz[] = {0, -1, -3, -4, -5, -30, -54, -79, -103, -118, -133, -148, -163, -249, -334, -420, -505, -492, -478, -465, -451, -313, -174, -35, 103, 103, 11, -82, -174, -266, -254, -242, -230, -217, -167, -117, -67, -16, -12, -8, -4};
+// Motor 4 (C) Steps: Hc/0.201
+int Nc[] = {0, 20, 50, 90, 129, 179, 239, 299, 338, 388, 448, 517, 607, 657, 697, 726, 746, 786, 806, 816, 826, 846, 856, 866, 886, 886, 856, 816, 766, 697, 597, 507, 388, 328, 269, 209, 149, 100, 60, 30, 10};
 
 
 // 배열 크기 계산 (모든 배열의 크기는 동일해야 함)
@@ -146,7 +153,7 @@ void setup() {
     Serial.println("4: Operate only motor 4 (C)");
     Serial.println("e: Print current encoder value once");
     Serial.println("r: Reset encoder value");
-    Serial.println("w: Encoder toggle on/off (Prints every 50ms when ON)");
+    Serial.println("w: Encoder toggle on/off (Prints changes every 50ms when ON)");
     Serial.println("s: Emergency stop !!");
     Serial.println("m: Repeat motor movements with max and min values of Nx");
 
