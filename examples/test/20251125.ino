@@ -1,280 +1,545 @@
+// 기존 수시변경 print encoder position -> print encoder position per 50ms 로 변경 
+// Motor 1: X (LR), Motor 2: Y (SI), Motor 3: Z (AP), Motor 4: C (AP)
+
 #include <AccelStepper.h>
-#include <math.h> // for round() function
 
-// ----------------------------------------------------
-// 1. PIN CONFIGURATION (핀 설정)
-// ----------------------------------------------------
+// Config motor pin (DRIVER Mode) - Motor 1 (X), Motor 2 (Y)
+const int motor1_stepPin = 38; // Step pin
+const int motor1_dirPin = 40; // Direction pin
 
-// DRIVER Mode Pins (A4988/DRV8825 드라이버용)
-// Motor 1 (Abdomen SI / x-axis)
-const int motor1_stepPin = 38;
-const int motor1_dirPin = 40; 
+const int motor2_stepPin = 46; // Step pin
+const int motor2_dirPin = 48; // Direction pin
 
-// Motor 2 (Abdomen Lateral / y-axis)
-const int motor2_stepPin = 46;
-const int motor2_dirPin = 48;
+// Config motor pin (FULL4WIRE Mode) - Motor 3 (Z), Motor 4 (C)
+// NOTE: The pin assignments for 4-wire mode must be correct for the hardware setup.
+// Assuming the motor3 and motor4 pin setups are placeholders or correct for the user's specific setup.
+const int motor3_pin_1 = 22; // motor3_IN1
+const int motor3_pin_2 = 24; // motor3_IN2
+const int motor3_pin_3 = 26; // motor3_IN3
+const int motor3_pin_4 = 28; // motor3_IN4
 
-// Motor 3 (Abdomen AP / z-axis) - High Torque
-const int motor3_stepPin = 22; 
-const int motor3_dirPin = 24;
+const int motor4_pin_1 = 30; // motor4_IN1
+const int motor4_pin_2 = 32; // motor4_IN2
+const int motor4_pin_3 = 34; // motor4_IN3
+const int motor4_pin_4 = 36; // motor4_IN4
 
-// Motor 4 (Chest AP / c-axis) - High Torque
-const int motor4_stepPin = 30;
-const int motor4_dirPin = 32;
 
-// Rotary Encoder Pins (엔코더는 Motor 3 (Abdomen AP)의 피드백으로 가정)
+// 로터리 엔코더 핀 설정
 const int encoderz_PinA = 19;
 const int encoderz_PinB = 18;
 
+// const int encoderc_PinA = 21; // Unused in this sketch
+// const int encoderc_PinB = 20; // Unused in this sketch
 
-// ----------------------------------------------------
-// 2. CONSTANTS AND ARRAYS (상수 및 배열)
-// ----------------------------------------------------
+// 엔코더 모니터링 모드 
+bool encoderMonitorMode = false;
 
-// 원본 100ms 간격 데이터 (정수형으로 변환)
-// M1(x/SI): 0.1mm 단위 (예: 4.0mm -> 40)
-const int raw_pos_M1_x[] = {0, 40, 100, 180, 260, 360, 480, 600, 680, 780, 900, 1040, 1220, 1320, 1400, 1460, 1500, 1580, 1620, 1640, 1660, 1700, 1720, 1740, 1780, 1780, 1720, 1640, 1540, 1400, 1200, 1020, 780, 660, 540, 420, 300, 200, 120, 60, 20};
-// M2(y/Lateral): 0.1mm 단위 (예: -2.0mm -> -20)
-const int raw_pos_M2_y[] = {0, -20, -40, -60, -80, -96, -112, -128, -144, -60, 24, 108, 192, 148, 104, 60, 16, 24, 32, 40, 48, 32, 16, 0, -16, -16, 28, 72, 116, 160, 168, 176, 184, 192, 124, 56, -12, -80, -60, -40, -20};
-// M3(z/Abdomen AP): 0.1mm 단위 (예: 12.4mm -> 124)
-const int raw_pos_M3_z[] = {0, 124, 248, 372, 496, 536, 576, 616, 656, 652, 648, 644, 640, 644, 648, 652, 656, 708, 760, 812, 864, 856, 848, 840, 832, 832, 812, 792, 772, 752, 756, 760, 764, 768, 616, 464, 312, 160, 120, 80, 40};
-// M4(c/Chest AP): 0.01mm 단위 (예: -0.25mm -> -25)
-const int raw_pos_M4_c[] = {0, -25, -50, -75, -100, -550, -1000, -1450, -1900, -2175, -2450, -2725, -3000, -4575, -6150, -7725, -9300, -9050, -8800, -8550, -8300, -5750, -3200, -650, 1900, 1900, 200, -1500, -3200, -4900, -4675, -4450, -4225, -4000, -3075, -2150, -1225, -300, -225, -150, -75};
-
-
-const int RAW_SIZE = sizeof(raw_pos_M1_x) / sizeof(raw_pos_M1_x[0]);
-const int INTERPOLATED_SIZE = 2 * RAW_SIZE - 1; 
-const unsigned long STEP_INTERVAL_MS = 50; 
-
-// 모터별 보간된 위치 배열 (최종 목표 스텝 값 저장)
-long g_motor1_positions[INTERPOLATED_SIZE];
-long g_motor2_positions[INTERPOLATED_SIZE];
-long g_motor3_positions[INTERPOLATED_SIZE];
-long g_motor4_positions[INTERPOLATED_SIZE];
-
-// 모터 스텝 변환 계수 (1mm = 5 steps 비율 유지)
-// M1, M2, M3 (0.1 mm 단위): 0.1 mm * 5 = 0.5 Steps/단위
-const float STEP_FACTOR_M123 = 0.5;
-// M4 (0.01 mm 단위): 0.01 mm * 5 = 0.05 Steps/단위
-const float STEP_FACTOR_M4 = 0.05;
-
-// ----------------------------------------------------
-// 3. CONTROL VARIABLES (제어 변수)
-// ----------------------------------------------------
-
+// 엔코더 카운터 변수
 volatile long encoder_count = 0;
+// volatile long last_encoder_count = 0; // Not used
+
+// 엔코더 상태 출력 시간 관리
+unsigned long lastEncoderPrintTime = 0;
+const unsigned long encoderPrintInterval = 50; // 50ms마다 엔코더 값 출력 (변경 요구 사항 반영)
+
+
+// 모터 동작 상태 변수
 bool isRunning = false;
 bool emergencyStop = false;
-bool isLooping = false; // 무한 반복 상태 변수
 
-// ----------------------------------------------------
-// 4. ACCELSTEPPER & OBJECTS (모터 객체)
-// ----------------------------------------------------
+// AccelStepper 객체 생성
+AccelStepper stepper1(AccelStepper::DRIVER, motor1_stepPin, motor1_dirPin); // Motor 1 (X): DRIVER
+AccelStepper stepper2(AccelStepper::DRIVER, motor2_stepPin, motor2_dirPin); // Motor 2 (Y): DRIVER
+// Renamed pins to avoid conflict, assuming standard 4-wire setup for NEMA 17/23 style
+AccelStepper stepper3(AccelStepper::FULL4WIRE, motor3_pin_1, motor3_pin_3, motor3_pin_2, motor3_pin_4); // Motor 3 (Z): FULL4WIRE
+AccelStepper stepper4(AccelStepper::FULL4WIRE, motor4_pin_1, motor4_pin_3, motor4_pin_2, motor4_pin_4); // Motor 4 (C): FULL4WIRE
 
-// AccelStepper 객체 생성 (모두 DRIVER 모드 사용)
-AccelStepper stepper1(AccelStepper::DRIVER, motor1_stepPin, motor1_dirPin);
-AccelStepper stepper2(AccelStepper::DRIVER, motor2_stepPin, motor2_dirPin);
-AccelStepper stepper3(AccelStepper::DRIVER, motor3_stepPin, motor3_dirPin);
-AccelStepper stepper4(AccelStepper::DRIVER, motor4_stepPin, motor4_dirPin);
+// ==============================================================================
+// 1. New Position Data (Converted to STEPS from mm)
+// Conversion Formulas:
+// Nx = Dx / 0.006
+// Ny = Dy / 0.006
+// Nz = Hz / 0.0184
+// Nc = Hc / 0.0201
+// Note: Steps are rounded to the nearest integer.
+// ==============================================================================
 
-// ----------------------------------------------------
-// 5. INTERRUPT SERVICE ROUTINES (ISR) - 엔코더 인터럽트
-// ----------------------------------------------------
+// Motor 1 (X) Steps: Dx/0.006
+int Nx[] = {0, -333, -667, -1000, -1333, -1600, -1867, -2133, -2400, -1000, 400, 1800, 3200, 2467, 1733, 1000, 267, 400, 533, 667, 800, 533, 267, 0, -267, -267, 467, 1200, 1933, 2667, 2800, 2933, 3067, 3200, 2067, 933, -200, -1333, -1000, -667, -333};
+// Motor 2 (Y) Steps: Dy/0.006
+int Ny[] = {0, 2067, 4133, 6200, 8267, 8933, 9600, 10267, 10933, 10867, 10800, 10733, 10667, 10733, 10800, 10867, 10933, 11800, 12667, 13533, 14400, 14267, 14133, 14000, 13867, 13867, 13533, 13200, 12867, 12533, 12600, 12667, 12733, 12800, 10267, 7733, 5200, 2667, 2000, 1333, 667};
+// Motor 3 (Z) Steps: Hz/0.0184
+int Nz[] = {0, -14, -27, -41, -54, -299, -543, -788, -1033, -1182, -1332, -1481, -1630, -2486, -3342, -4198, -5054, -4918, -4783, -4647, -4511, -3125, -1739, -353, 1033, 1033, 109, -815, -1739, -2663, -2541, -2418, -2296, -2174, -1671, -1168, -666, -163, -122, -82, -41};
+// Motor 4 (C) Steps: Hc/0.0201
+int Nc[] = {0, 199, 498, 896, 1294, 1791, 2388, 2985, 3383, 3881, 4478, 5174, 6070, 6567, 6965, 7263, 7463, 7861, 8060, 8159, 8259, 8458, 8557, 8657, 8856, 8856, 8557, 8159, 7661, 6965, 5970, 5075, 3881, 3283, 2687, 2089, 1493, 995, 597, 299, 100};
 
+
+// 배열 크기 계산 (모든 배열의 크기는 동일해야 함)
+const int arraySize = sizeof(Nx) / sizeof(Nx[0]);
+
+// 작동 시간 측정 변수
+unsigned long startTime = 0;
+unsigned long endTime = 0;
+
+// 함수 선언
+void stopMotors();
+void printFormattedTime(unsigned long timeInMs);
+void calculateMaxMin();
+void repeatMaxMin();
+void moveMotorByArray();
+void moveSingleMotor(int motorNum);
+void checkSerialInput();
+void printEncoderPositionPeriodically();
+void Encoder_z_CW();
+void Encoder_z_CCW();
+
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("-------------------------------------");
+    Serial.println("Stepper Motor and Encoder Initialized");
+
+    // 모터 속도 및 가속 설정 (가속 및 속도는 하드웨어에 맞춰 조정 필요)
+    stepper1.setMaxSpeed(1600.0);    // 최대 속도 (steps per second)
+    stepper1.setAcceleration(800.0); // 가속도 (steps per second^2)
+
+    stepper2.setMaxSpeed(1600.0);    // 최대 속도 (steps per second)
+    stepper2.setAcceleration(800.0); // 가속도 (steps per second^2)
+
+    stepper3.setMaxSpeed(1000.0);    // 최대 속도 (steps per second)
+    stepper3.setAcceleration(500.0); // 가속도 (steps per second^2)
+
+    stepper4.setMaxSpeed(1000.0);    // 최대 속도 (steps per second)
+    stepper4.setAcceleration(500.0); // 가속도 (steps per second^2)
+
+    // 배열 길이 일치 여부 확인
+    if (sizeof(Nx) / sizeof(Nx[0]) == arraySize &&
+        sizeof(Ny) / sizeof(Ny[0]) == arraySize &&
+        sizeof(Nz) / sizeof(Nz[0]) == arraySize &&
+        sizeof(Nc) / sizeof(Nc[0]) == arraySize) {
+        Serial.println("All arrays have the same length.");
+    } else {
+        Serial.println("Error: Array lengths do not match! Check the new data arrays.");
+    }
+
+    // Config a rotary encdoer pin
+    pinMode(encoderz_PinA, INPUT_PULLUP);
+    pinMode(encoderz_PinB, INPUT_PULLUP);
+    
+    // Config the interrupt
+    attachInterrupt(digitalPinToInterrupt(encoderz_PinA), Encoder_z_CW, RISING);
+    attachInterrupt(digitalPinToInterrupt(encoderz_PinB), Encoder_z_CCW, RISING);
+
+    // 배열의 이론적 작동 시간 계산 및 출력 (100ms * arraySize)
+    int theoreticalTime = arraySize * 100; // 각 위치당 100ms로 변경
+    Serial.print("Expected operation time: ");
+    printFormattedTime(theoreticalTime);
+
+    // Min-Max calculation (Only for Motor 1 (X) array Nx)
+    calculateMaxMin();
+
+    Serial.println("Available commands:");
+    Serial.println("a: Operate all motors simultaneously (100ms interval)");
+    Serial.println("1: Operate only motor 1 (X)");
+    Serial.println("2: Operate only motor 2 (Y)");
+    Serial.println("3: Operate only motor 3 (Z)");
+    Serial.println("4: Operate only motor 4 (C)");
+    Serial.println("e: Print current encoder value once");
+    Serial.println("r: Reset encoder value");
+    Serial.println("w: Encoder toggle on/off (Prints every 50ms when ON)");
+    Serial.println("s: Emergency stop !!");
+    Serial.println("m: Repeat motor movements with max and min values of Nx");
+
+}
+
+
+void loop() {
+    
+    // 모터가 동작 중이 아닐 때만 주기적 엔코더 출력 확인
+    if (!isRunning) {
+        printEncoderPositionPeriodically();
+    }
+    
+    // 시리얼 입력 확인 및 처리
+    checkSerialInput();
+
+    // 비상 정지 상태 확인 (loop 시작 시점에서는 checkSerialInput에서 처리하도록 변경)
+    if (emergencyStop) {
+        // 비상 정지 상태일 때는 모터 동작 중지
+        stopMotors();
+        isRunning = false;
+        Serial.println("Emergency stop activated. Motors stopped.");
+        emergencyStop = false; // 비상 정지 상태 해제
+        Serial.println("Ready for new commands.");
+    }
+}
+
+// 50ms마다 엔코더 값 출력 함수
+void printEncoderPositionPeriodically() {
+    if (encoderMonitorMode) {
+        unsigned long currentTime = millis();
+        if (currentTime - lastEncoderPrintTime >= encoderPrintInterval) {
+            // 엔코더 값이 변경되었는지 확인
+            if (encoder_count != last_encoder_count) {
+                Serial.print("E,");
+                Serial.print(currentTime);
+                Serial.print(",");
+                Serial.println(encoder_count);
+                last_encoder_count = encoder_count;
+            }
+            lastEncoderPrintTime = currentTime;
+        }
+    }
+}
+
+
+// 시리얼 입력 확인 함수
+void checkSerialInput() {
+    if (Serial.available() > 0) {
+        char command = Serial.read();
+
+        // 비상 정지 명령 확인
+        if (command == 's') {
+            emergencyStop = true;
+            return;
+        }
+        
+        // 다른 명령어들 처리
+        if (!isRunning) { // 모터가 동작 중이 아닐 때만 다른 명령 처리
+            if (command == 'a') {
+                Serial.println("Moving all motors simultaneously (100ms interval)");
+                
+                // 시작 시간 기록
+                startTime = millis();
+                isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
+                moveMotorByArray();
+                isRunning = false;
+                
+                // 종료 시간 기록
+                endTime = millis();
+                
+                // 총 소요 시간 계산 및 출력
+                unsigned long totalTime = endTime - startTime;
+                Serial.print("Total execution time: ");
+                printFormattedTime(totalTime);
+            }
+            else if (command == 'e') {
+                // 엔코더 값 출력 명령
+                Serial.print("Current encoder count: ");
+                Serial.println(encoder_count);
+            }
+            else if (command == 'r') {
+                // 엔코더 값 리셋 명령
+                encoder_count = 0;
+                last_encoder_count = 0;
+                Serial.println("Encoder count reset to 0");
+            }
+            else if (command == '1') {
+                // 모터 1(X)만 작동
+                Serial.println("Moving only motor 1 (X)");
+                startTime = millis();
+                isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
+                moveSingleMotor(1);
+                isRunning = false;
+                endTime = millis();
+
+                unsigned long totalTime = endTime - startTime;
+                Serial.print("Total execution time: ");
+                printFormattedTime(totalTime);
+            }
+            else if (command == '2') {
+                // 모터 2(Y)만 작동
+                Serial.println("Moving only motor 2 (Y)");
+                startTime = millis();
+                isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
+                moveSingleMotor(2);
+                isRunning = false;
+                endTime = millis();
+
+                unsigned long totalTime = endTime - startTime;
+                Serial.print("Total execution time: ");
+                printFormattedTime(totalTime);
+            }
+
+            else if (command == '3') {
+                // 모터 3(Z)만 작동
+                Serial.println("Moving only motor 3 (Z)");
+                startTime = millis();
+                isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
+                moveSingleMotor(3);
+                isRunning = false;
+                endTime = millis();
+
+                unsigned long totalTime = endTime - startTime;
+                Serial.print("Total execution time: ");
+                printFormattedTime(totalTime);
+            }
+            else if (command == '4') {
+                // 모터 4(C)만 작동
+                Serial.println("Moving only motor 4 (C)");
+                startTime = millis();
+                isRunning = true;
+                Serial.println("Time(ms), Encoder Value");
+                moveSingleMotor(4);
+                isRunning = false;
+                endTime = millis();
+
+                unsigned long totalTime = endTime - startTime;
+                Serial.print("Total execution time: ");
+                printFormattedTime(totalTime);
+            }
+
+            else if (command == 'm') { // 'm' 입력 시 반복 동작 실행 (Motor 1: X)
+                repeatMaxMin();
+            }
+            
+            else if (command == 'w') {
+                // 엔코더 값 변화 모니터링 모드 토글
+                encoderMonitorMode = !encoderMonitorMode;
+                if (encoderMonitorMode) {
+                    Serial.println("Encoder monitoring mode: ON (Prints changes every 50ms)");
+                    lastEncoderPrintTime = millis(); // 모니터링 시작 시간 초기화
+                    last_encoder_count = encoder_count;
+                } else {
+                    Serial.println("Encoder monitoring mode: OFF");
+                }
+            }
+        }
+    }
+}
+
+
+// 모터 정지 함수
+void stopMotors() {
+    stepper1.stop(); // 감속하여 정지
+    stepper2.stop(); // 감속하여 정지
+    stepper3.stop(); // 감속하여 정지
+    stepper4.stop(); // 감속하여 정지
+    
+    // 모터가 완전히 멈출 때까지 run() 함수 호출 (비상 정지 시에는 대기하지 않도록 수정)
+    // 비상 정지는 run() 함수가 호출되는 루프 외부에서 즉시 실행되어야 하므로, run()을 한번만 호출
+    stepper1.run();
+    stepper2.run();
+    stepper3.run();
+    stepper4.run();
+    
+    // 모터 출력 비활성화 (필요한 경우)
+    // stepper1.disableOutputs();
+    // stepper2.disableOutputs();
+    // stepper3.disableOutputs();
+    // stepper4.disableOutputs();
+}
+
+
+// 배열에 따라 모터 움직임 구현 함수
+void moveMotorByArray() {
+    const unsigned long moveInterval = 100; // 100ms 간격으로 다음 위치로 이동
+    
+    for (int i = 0; i < arraySize; i++) {
+        // 배열 값은 이미 스텝 수로 변환되었으므로, 바로 moveTo에 사용
+        stepper1.moveTo(Nx[i]); // Motor 1 (X)
+        stepper2.moveTo(Ny[i]); // Motor 2 (Y)
+        stepper3.moveTo(Nz[i]); // Motor 3 (Z)
+        stepper4.moveTo(Nc[i]); // Motor 4 (C)
+
+        unsigned long stepStartTime = millis();
+        
+        // 100ms 동안 비차단 방식으로 모터를 부드럽게 움직임
+        while (millis() - stepStartTime < moveInterval) {
+            
+            // 이 루프 안에서도 시리얼 입력 확인 (비상 정지를 위한 필수)
+            if (Serial.available() > 0) {
+                char command = Serial.read();
+                if (command == 's') { // 's'키를 비상 정지로 사용
+                    Serial.println("Emergency stop activated!");
+                    stopMotors();
+                    return; // 함수 종료
+                }
+            }
+            
+            // AccelStepper run()을 지속적으로 호출하여 움직임 처리
+            stepper1.run();
+            stepper2.run();
+            stepper3.run();
+            stepper4.run();
+            
+            // 50ms마다 엔코더 위치 출력 (모터 동작 중에는 50ms 주기로 엔코더 값 출력)
+            unsigned long currentTime = millis();
+            if (currentTime - lastEncoderPrintTime >= encoderPrintInterval) {
+                Serial.print(currentTime - startTime);
+                Serial.print(",");
+                Serial.println(encoder_count);
+                lastEncoderPrintTime = currentTime;
+            }
+        }
+    }
+
+    Serial.println("Completed all movements based on array data.");
+}
+
+
+
+// 단일 모터 움직임 함수
+void moveSingleMotor(int motorNum) {
+    int* array;
+    AccelStepper* stepper;
+    const unsigned long moveInterval = 100; // 100ms 간격으로 다음 위치로 이동
+
+    switch(motorNum) {
+        case 1: array = Nx; stepper = &stepper1; break;
+        case 2: array = Ny; stepper = &stepper2; break;
+        case 3: array = Nz; stepper = &stepper3; break;
+        case 4: array = Nc; stepper = &stepper4; break;
+        default: return;
+    }
+    
+    for (int i = 0; i < arraySize; i++) {
+        long targetPosition = array[i]; // 이미 스텝 수로 변환됨
+        stepper->moveTo(targetPosition);
+
+        unsigned long stepStartTime = millis();
+        while (millis() - stepStartTime < moveInterval) {
+            if (Serial.available() > 0) {
+                char command = Serial.read();
+                if (command == 's') {
+                    Serial.println("Emergency stop activated!");
+                    stopMotors();
+                    return;
+                }
+            }
+            stepper->run();
+            
+            // 50ms마다 엔코더 위치 출력
+            unsigned long currentTime = millis();
+            if (currentTime - lastEncoderPrintTime >= encoderPrintInterval) {
+                Serial.print(currentTime - startTime);
+                Serial.print(",");
+                Serial.println(encoder_count);
+                lastEncoderPrintTime = currentTime;
+            }
+        }
+    }
+    Serial.print("Completed movements for motor ");
+    Serial.println(motorNum);
+}
+
+
+// 시간을 포맷팅하여 출력하는 함수 (밀리초를 시:분:초.밀리초 형식으로 변환)
+void printFormattedTime(unsigned long timeInMs) {
+    // 밀리초를 시, 분, 초로 변환
+    unsigned long ms = timeInMs % 1000;
+    unsigned long totalSeconds = timeInMs / 1000;
+    unsigned long seconds = totalSeconds % 60;
+    unsigned long minutes = (totalSeconds / 60) % 60;
+    unsigned long hours = totalSeconds / 3600;
+    
+    // 시:분:초.밀리초 형식으로 출력
+    if (hours > 0) {
+        Serial.print(hours);
+        Serial.print("시간 ");
+    }
+    
+    if (minutes > 0 || hours > 0) {
+        Serial.print(minutes);
+        Serial.print("분 ");
+    }
+    
+    Serial.print(seconds);
+    Serial.print(".");
+    
+    // 밀리초는 항상 3자리로 표시
+    if (ms < 10) Serial.print("00");
+    else if (ms < 100) Serial.print("0");
+    
+    Serial.print(ms);
+    Serial.println("초");
+}
+
+
+// Nx 배열의 최대값과 최소값 계산
+int maxNx = -100000;
+int minNx = 100000;
+
+// Min-Max calculation function (Only for Motor 1 (X) array Nx)
+void calculateMaxMin() {
+    for (int i = 0; i < arraySize; i++) {
+        if (Nx[i] > maxNx) maxNx = Nx[i];
+        if (Nx[i] < minNx) minNx = Nx[i];
+    }
+    Serial.print("Max step value in Nx (Motor 1): ");
+    Serial.println(maxNx);
+    Serial.print("Min step value in Nx (Motor 1): ");
+    Serial.println(minNx);
+}
+
+
+// 최대값과 최소값으로 모터 1(X)와 2(Y)를 반복 동작시키는 함수
+void repeatMaxMin() {
+    Serial.println("Repeating motor 1 and 2 movements with max and min values of Nx.");
+    for (int repeat = 0; repeat < 10; repeat++) {
+        // 최대값으로 동작
+        long targetPositionMax = maxNx;
+        stepper1.moveTo(targetPositionMax);
+        // Motor 2는 Motor 1과 반대 방향으로 움직이도록 설정 (예시)
+        stepper2.moveTo(-targetPositionMax); 
+
+        while (stepper1.distanceToGo() != 0 || stepper2.distanceToGo() != 0) {
+            if (Serial.available() > 0) {
+                char command = Serial.read();
+                if (command == 's') { // 's'키를 비상 정지로 사용
+                    Serial.println("Emergency stop activated!");
+                    stopMotors();
+                    return; // 함수 종료
+                }
+            }
+            stepper1.run();
+            stepper2.run();
+        }
+        Serial.println("Completed movement to max value.");
+        Serial.print("Encoder Count: ");
+        Serial.println(encoder_count);
+
+        // 최소값으로 동작
+        long targetPositionMin = minNx;
+        stepper1.moveTo(targetPositionMin);
+        stepper2.moveTo(-targetPositionMin);
+
+        while (stepper1.distanceToGo() != 0 || stepper2.distanceToGo() != 0) {
+            if (Serial.available() > 0) {
+                char command = Serial.read();
+                if (command == 's') { // 's'키를 비상 정지로 사용
+                    Serial.println("Emergency stop activated!");
+                    stopMotors();
+                    return; // 함수 종료
+                }
+            }
+            stepper1.run();
+            stepper2.run();
+        }
+        Serial.println("Completed movement to min value.");
+        Serial.print("Encoder Count: ");
+        Serial.println(encoder_count);
+    }
+    stopMotors();
+    Serial.println("Max/Min repetition finished.");
+}
+
+
+// 로터리 엔코더 시계방향(CW) 회전 감지 인터럽트 함수
 void Encoder_z_CW() {
     if (digitalRead(encoderz_PinB) == LOW) {
         encoder_count++;
     }
 }
 
+
+// 로터리 엔코더 반시계방향(CCW) 회전 감지 인터럽트 함수
 void Encoder_z_CCW() {
     if (digitalRead(encoderz_PinA) == LOW) {
         encoder_count--;
-    }
-}
-
-
-// ----------------------------------------------------
-// 6. HELPER FUNCTIONS (도우미 함수)
-// ----------------------------------------------------
-
-// 선형 보간을 수행하고 스텝으로 변환하는 함수
-void interpolateData(const int raw_data[], long interpolated_data[], float step_factor) {
-    for (int i = 0; i < RAW_SIZE; i++) {
-        // 1. 원본 데이터 포인트 저장 (50ms 지점)
-        // 스텝으로 변환 후 round() 처리하여 가장 가까운 정수 스텝으로 설정
-        interpolated_data[2 * i] = (long)round(raw_data[i] * step_factor);
-
-        // 2. 인접한 두 점 사이에 보간값 계산 및 저장 (25ms 지점)
-        if (i < RAW_SIZE - 1) {
-            float p1_steps = raw_data[i] * step_factor;
-            float p2_steps = raw_data[i + 1] * step_factor;
-            // 선형 보간 후 round() 처리
-            interpolated_data[2 * i + 1] = (long)round((p1_steps + p2_steps) / 2.0);
-        }
-    }
-}
-
-// 모터 정지 함수
-void stopMotors() {
-    stepper1.stop();
-    stepper2.stop();
-    stepper3.stop();
-    stepper4.stop();
-
-    // 모터가 완전히 멈출 때까지 run() 호출 (감속 정지)
-    while (stepper1.isRunning() || stepper2.isRunning() || stepper3.isRunning() || stepper4.isRunning()) {
-        stepper1.run();
-        stepper2.run();
-        stepper3.run();
-        stepper4.run();
-    }
-    
-    // 모터 출력 비활성화
-    stepper1.disableOutputs();
-    stepper2.disableOutputs();
-    stepper3.disableOutputs();
-    stepper4.disableOutputs();
-}
-
-// 시간을 포맷팅하여 출력하는 함수
-void printFormattedTime(unsigned long timeInMs) {
-    unsigned long ms = timeInMs % 1000;
-    unsigned long totalSeconds = timeInMs / 1000;
-    unsigned long seconds = totalSeconds % 60;
-    unsigned long minutes = (totalSeconds / 60) % 60;
-    
-    Serial.print(minutes); Serial.print("m ");
-    Serial.print(seconds); Serial.print("s ");
-    Serial.print(ms); Serial.println("ms");
-}
-
-
-// ----------------------------------------------------
-// 7. CORE MOTION LOGIC (핵심 모션 로직)
-// ----------------------------------------------------
-
-// 4축 동시 움직임 구현 함수
-void moveMotorByArray() {
-    // 50ms마다 현재 시각, 4개 축 목표 스텝, Motor 3 엔코더 값 출력
-    Serial.println("Time(ms), M1(SI) Target Steps, M2(Lat) Target Steps, M3(AP) Target Steps, M4(Chest) Target Steps, M3 Encoder Steps");
-    
-    // 무한 반복 (Emergency Stop 전까지)
-    while (isLooping) {
-        for (int i = 0; i < INTERPOLATED_SIZE; i++) {
-            if (emergencyStop) return; // 비상 정지 확인
-
-            // 1. 목표 위치 설정 (절대 스텝 위치)
-            stepper1.moveTo(g_motor1_positions[i]); // x-axis
-            stepper2.moveTo(g_motor2_positions[i]); // y-axis
-            stepper3.moveTo(g_motor3_positions[i]); // z-axis
-            stepper4.moveTo(g_motor4_positions[i]); // c-axis
-
-            unsigned long stepStartTime = millis();
-            
-            // 2. 50ms 동안 모터 구동 및 동기화 유지
-            while (millis() - stepStartTime < STEP_INTERVAL_MS) {
-                
-                // 시리얼 입력 확인 (비상 정지 처리)
-                if (Serial.available() > 0) {
-                    char command = Serial.read();
-                    if (command == 's') { 
-                        emergencyStop = true;
-                        Serial.println("Emergency stop command received!");
-                        stopMotors();
-                        return; 
-                    }
-                }
-
-                // 모터 구동 (비차단 방식)
-                stepper1.run();
-                stepper2.run();
-                stepper3.run();
-                stepper4.run();
-            }
-
-            // 3. 50ms 간격으로 출력
-            Serial.print(millis()); Serial.print(", ");
-            Serial.print(g_motor1_positions[i]); Serial.print(", ");
-            Serial.print(g_motor2_positions[i]); Serial.print(", ");
-            Serial.print(g_motor3_positions[i]); Serial.print(", ");
-            Serial.print(g_motor4_positions[i]); Serial.print(", ");
-            Serial.println(encoder_count); 
-        }
-        // 사이클 완료 후 다시 시작
-    }
-    Serial.println("Movement loop stopped.");
-}
-
-// ----------------------------------------------------
-// 8. SETUP & LOOP
-// ----------------------------------------------------
-
-void setup() {
-    Serial.begin(115200);
-    Serial.println("-------------------------------------");
-    Serial.println("4D Phantom Controller Initializing...");
-
-    // STEP_FACTOR를 적용하여 데이터 보간 및 스텝 변환
-    interpolateData(raw_pos_M1_x, g_motor1_positions, STEP_FACTOR_M123);
-    interpolateData(raw_pos_M2_y, g_motor2_positions, STEP_FACTOR_M123);
-    interpolateData(raw_pos_M3_z, g_motor3_positions, STEP_FACTOR_M123);
-    interpolateData(raw_pos_M4_c, g_motor4_positions, STEP_FACTOR_M4);
-
-    // 모터 속도 및 가속 설정 (모든 축에 동일하게 설정)
-    stepper1.setMaxSpeed(2000); stepper1.setAcceleration(1000);
-    stepper2.setMaxSpeed(2000); stepper2.setAcceleration(1000);
-    stepper3.setMaxSpeed(2000); stepper3.setAcceleration(1000);
-    stepper4.setMaxSpeed(2000); stepper4.setAcceleration(1000);
-
-    // 엔코더 인터럽트 설정
-    pinMode(encoderz_PinA, INPUT_PULLUP);
-    pinMode(encoderz_PinB, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(encoderz_PinA), Encoder_z_CW, RISING);
-    attachInterrupt(digitalPinToInterrupt(encoderz_PinB), Encoder_z_CCW, RISING);
-
-    // 이론적 작동 시간 계산 및 출력
-    unsigned long theoreticalTime = INTERPOLATED_SIZE * STEP_INTERVAL_MS;
-    Serial.print("Expected single cycle time: ");
-    printFormattedTime(theoreticalTime);
-
-    Serial.println("Available commands:");
-    Serial.println("'l': Start continuous looping (cycle)");
-    Serial.println("'s': Emergency Stop and reset");
-}
-
-
-void loop() {
-    // 시리얼 입력 확인
-    if (Serial.available() > 0) {
-        char command = Serial.read();
-
-        if (command == 's') {
-            emergencyStop = true;
-            isLooping = false; // 루프 중지
-        }
-
-        if (emergencyStop) {
-            if (isRunning) {
-                stopMotors();
-                isRunning = false;
-                Serial.println("Emergency stop activated. Motors stopped.");
-            }
-            emergencyStop = false;
-            Serial.println("Ready for new commands (Type 'l' to start cycle).");
-        } else if (command == 'l' && !isRunning) {
-            Serial.println("Starting 4-axis synchronized cycle loop...");
-            
-            // 엔코더 초기화 및 시작 시간 기록
-            encoder_count = 0;
-
-            isRunning = true;
-            isLooping = true;
-            
-            moveMotorByArray(); // 무한 루프 시작
-            
-            isRunning = false;
-            isLooping = false; // moveMotorByArray에서 빠져나온 경우 (s 입력)
-        }
     }
 }
